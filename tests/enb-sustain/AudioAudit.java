@@ -53,8 +53,13 @@ public class AudioAudit implements PreLaunchEntrypoint {
                     check(AL10.alGetError()==0,name+" buffer reusable while attached");
                     AL10.alSourcei(source,AL10.AL_LOOPING,AL10.AL_TRUE);AL10.alSourcef(source,AL10.AL_GAIN,.3f);
                     AL10.alSourcePlay(source);render(device,48000*3);
-                    float[] held=render(device,24000);double level=rms(held);
+                    float[] held=render(device,48000);double level=rms(held);
                     check(AL10.alGetSourcei(source,AL10.AL_SOURCE_STATE)==AL10.AL_PLAYING && level>.00001,name+" audible after 3 seconds");
+                    int envelopeWindow=Math.max(64,(int)Math.round(48000.0*(result.end()-result.start())/format.getSampleRate()/4));
+                    double low=Double.POSITIVE_INFINITY,high=0;
+                    for(int at=0;at+envelopeWindow<=held.length;at+=envelopeWindow){double energy=0;for(int j=at;j<at+envelopeWindow;j++)energy+=held[j]*held[j];double value=Math.sqrt(energy/envelopeWindow);low=Math.min(low,value);high=Math.max(high,value);}
+                    System.out.println("ENB_ENVELOPE "+name+" max/min="+(high/low));
+                    check(high/low<1.04,name+" sustain envelope ripple below 4 percent");
                     AL10.alSourcef(source,AL10.AL_GAIN,.03f);render(device,4800);
                     double quiet=rms(render(device,24000));
                     check(quiet<level*.2 && quiet>level*.04,name+" envelope controls ongoing sample");

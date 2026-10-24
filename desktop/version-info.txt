@@ -1,13 +1,13 @@
 VSVersionInfo(
-  ffi=FixedFileInfo(filevers=(2,11,1,0), prodvers=(2,11,1,0), mask=0x3f, flags=0x0, OS=0x40004, fileType=0x1, subtype=0x0, date=(0,0)),
+  ffi=FixedFileInfo(filevers=(2,11,2,0), prodvers=(2,11,2,0), mask=0x3f, flags=0x0, OS=0x40004, fileType=0x1, subtype=0x0, date=(0,0)),
   kids=[StringFileInfo([StringTable('080404b0',[
     StringStruct('CompanyName','Endframe'),
     StringStruct('FileDescription','音符工坊 · Note Redstone Studio'),
-    StringStruct('FileVersion','2.11.1'),
+    StringStruct('FileVersion','2.11.2'),
     StringStruct('InternalName','NoteRedstoneStudio'),
-    StringStruct('OriginalFilename','音符工坊2.11.1.exe'),
+    StringStruct('OriginalFilename','音符工坊2.11.2.exe'),
     StringStruct('ProductName','音符工坊 · Note Redstone Studio'),
-    StringStruct('ProductVersion','2.11.1'),
+    StringStruct('ProductVersion','2.11.2'),
     StringStruct('LegalCopyright','AGPL-3.0-or-later')
   ])]), VarFileInfo([VarStruct('Translation',[2052,1200])])]
 )

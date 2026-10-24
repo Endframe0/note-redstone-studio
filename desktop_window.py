@@ -26,13 +26,46 @@ def configure_shell(window):
         user.SetWindowLongW.restype=wintypes.LONG
         user.SetWindowPos.argtypes=[wintypes.HWND,wintypes.HWND,ctypes.c_int,ctypes.c_int,ctypes.c_int,ctypes.c_int,wintypes.UINT]
         style=user.GetWindowLongW(hwnd,-16)
-        user.SetWindowLongW(hwnd,-16,style|0x00020000|0x00010000|0x00080000)
+        install_resize_frame(window, hwnd)
+        user.SetWindowLongW(hwnd,-16,style|0x00020000|0x00010000|0x00080000|0x00040000)
         if not window.focus:
             user.SetWindowLongW(hwnd,-20,user.GetWindowLongW(hwnd,-20)|0x08000000)
         # Refresh non-client capabilities without moving, showing or activating.
         user.SetWindowPos(hwnd,None,0,0,0,0,0x0020|0x0001|0x0002|0x0004|0x0010)
     if window.native.InvokeRequired:window.native.Invoke(Action(apply))
     else:apply()
+
+
+def install_resize_frame(window, hwnd):
+    """Keep a native sizing frame while painting the complete client area ourselves."""
+    if getattr(window, '_resize_proc', None):return
+    user=ctypes.windll.user32
+    comctl=ctypes.windll.comctl32
+    proc_type=ctypes.WINFUNCTYPE(ctypes.c_ssize_t,wintypes.HWND,wintypes.UINT,
+                              wintypes.WPARAM,wintypes.LPARAM,ctypes.c_size_t,ctypes.c_size_t)
+    comctl.DefSubclassProc.argtypes=[wintypes.HWND,wintypes.UINT,wintypes.WPARAM,wintypes.LPARAM]
+    comctl.DefSubclassProc.restype=ctypes.c_ssize_t
+    comctl.SetWindowSubclass.argtypes=[wintypes.HWND,proc_type,ctypes.c_size_t,ctypes.c_size_t]
+    comctl.SetWindowSubclass.restype=wintypes.BOOL
+    user.GetWindowRect.argtypes=[wintypes.HWND,ctypes.POINTER(wintypes.RECT)]
+    user.IsZoomed.argtypes=[wintypes.HWND]
+    def native_proc(handle,message,wparam,lparam,subclass_id,data):
+        if message==0x83 and wparam:return 0 # WM_NCCALCSIZE: no OS caption/border painting
+        if message==0x84 and not user.IsZoomed(handle):
+            rect=wintypes.RECT();user.GetWindowRect(handle,ctypes.byref(rect))
+            x=ctypes.c_short(lparam&0xffff).value;y=ctypes.c_short((lparam>>16)&0xffff).value
+            margin=max(6,round(6*window.native.DeviceDpi/96))
+            left=x<rect.left+margin;right=x>=rect.right-margin
+            top=y<rect.top+margin;bottom=y>=rect.bottom-margin
+            if left:return 13 if top else 16 if bottom else 10
+            if right:return 14 if top else 17 if bottom else 11
+            if top:return 12
+            if bottom:return 15
+        return comctl.DefSubclassProc(handle,message,wparam,lparam)
+    window._resize_proc=proc_type(native_proc) # callback must outlive the native window
+    if not comctl.SetWindowSubclass(hwnd,window._resize_proc,1,0):
+        window._resize_proc=None
+        raise ctypes.WinError()
 
 
 def apply_backdrop(window,theme):
@@ -80,9 +113,14 @@ def start_resize(window,edge):
     def resize():
         hwnd=int(window.native.Handle.ToInt64())
         user=ctypes.windll.user32
+        user.GetAsyncKeyState.argtypes=[ctypes.c_int]
+        user.GetAsyncKeyState.restype=ctypes.c_short
+        if not user.GetAsyncKeyState(0x01)&0x8000:return
+        point=wintypes.POINT();user.GetCursorPos(ctypes.byref(point))
+        position=(point.x&0xffff)|((point.y&0xffff)<<16)
         user.SendMessageW.argtypes=[wintypes.HWND,wintypes.UINT,wintypes.WPARAM,wintypes.LPARAM]
         user.ReleaseCapture()
-        user.SendMessageW(hwnd,0xA1,hit,0) # WM_NCLBUTTONDOWN, OS interactive sizing
+        user.SendMessageW(hwnd,0xA1,hit,position) # WM_NCLBUTTONDOWN, OS interactive sizing
     window.native.BeginInvoke(Action(resize))
 
 

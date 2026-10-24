@@ -36,7 +36,7 @@ def make_options(values):
     midi=dict(midiTimingMode={'节拍适配（小幅变速）':'fit','保持原速（允许量化）':'original','严格原速（不可量化）':'strict'}.get(values.get('midi_timing'),'fit'),midiSpeedTolerance=float(values.get('midi_speed_tolerance',10)),midiEnvelope='none' if values.get('midi_envelope')=='不使用淡入淡出' else 'custom',midiFadeInMs=int(values.get('midi_fade_in',0)),midiFadeOutMs=int(values.get('midi_fade_out',50)))
     if values.get('adaptive'):
         # Hidden manual settings never veto a fresh automatic plan.
-        return dict(input=values['input'],output=values['output'],target=values['target'],support=SUPPORTS[values['support']],adaptive=True,soundEngine='extended' if values.get('auto_sound')=='ENB 模组音符盒' else 'vanilla',pitch='fold' if values.get('auto_pitch')=='八度折叠 / 半音取整' else 'strict',**midi)
+        return dict(input=values['input'],output=values['output'],target=values['target'],support=SUPPORTS[values['support']],adaptive=True,maxAspect=HORIZONTAL_OPTIONS[values['aspect']],maxSpatialAspect=SPACE_OPTIONS[values['spatial_aspect']],soundEngine='extended' if values.get('auto_sound')=='ENB 模组音符盒' else 'vanilla',pitch='fold' if values.get('auto_pitch')=='八度折叠 / 半音取整' else 'strict',**midi)
     limits=[512,100,100] if not values['objective'].startswith('体积优先') else [int(values[f"limit_{i}"]) for i in range(3)]
     opt={'input':values['input'],'output':values['output'],'target':values['target'],
          'objective':'toxic' if values['objective'].startswith('毒曲') else 'materials' if values['objective'].startswith('极限省材') else 'volume',

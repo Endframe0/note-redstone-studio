@@ -28,7 +28,7 @@ function offsets(a,b){return [...new Set([0,1,-1,2,-2,Math.floor((a-b)/2),a-b,..
 function pack(parts){
  const order=parts.map((p,i)=>({i,v:p.m.volume})).sort((a,b)=>b.v-a.v).map(x=>x.i),placements=Array(parts.length),models=[];
  for(const index of order){if(stopped())return null;const raw=parts[index].m;if(!models.length){const rotation=restarts%4,m=transform(raw,{rotation}),offset=m.bounds.map(b=>-b[0]);placements[index]={rotation,offset};models.push(transform(raw,placements[index]));continue}
-  const union=merge(models),a=cells(union),candidates=[],maxV=Math.min(8000000,Atomics.load(flags,1)),lastPart=models.length===parts.length-1;
+  const union=merge(models),a=cells(union),candidates=[],maxV=Math.min(opt.unboundedSize?Infinity:8000000,Atomics.load(flags,1)),lastPart=models.length===parts.length-1;
   for(let rotation=0;rotation<4;rotation++){const b=transform(raw,{rotation}),data=cells(b),[bx,by,bz]=b.dimensions;const dxs=offsets(union.dimensions[0],bx),dzs=offsets(union.dimensions[2],bz);
    for(let y=0;y+by<=opt.maxY;y++)for(const x of dxs)for(const z of dzs){const offset=[x-b.bounds[0][0]+union.bounds[0][0],y-b.bounds[1][0]+union.bounds[1][0],z-b.bounds[2][0]+union.bounds[2][0]],bounds=union.bounds.map((v,i)=>[Math.min(v[0],b.bounds[i][0]+offset[i]),Math.max(v[1],b.bounds[i][1]+offset[i])]),dimensions=bounds.map(v=>v[1]-v[0]+1),volume=dimensions.reduce((a,b)=>a*b,1);if(volume>=maxV||dimensions[0]>opt.maxX||dimensions[1]>opt.maxY||dimensions[2]>opt.maxZ||lastPart&&!fits(dimensions,opt))continue;candidates.push({rotation,offset,b,data,volume,score:volume*shapePenalty(dimensions,{...opt,maxAspect:0})})}
   }

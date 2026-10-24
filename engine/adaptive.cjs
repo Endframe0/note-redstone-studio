@@ -4,7 +4,7 @@ const {parse}=require('./music-source.cjs');
 function plan(raw,options={}){
  raw=require('./midi-mapping.cjs').apply(raw,options);
  const opt={...options},automatic=opt.adaptive===true,messages=[];
- if(automatic)Object.assign(opt,{speed:1,transpose:0,pitch:opt.pitch||'strict',timing:'auto',soundEngine:opt.soundEngine||'vanilla',backend:'cpu',heavyCore:false,externalInputs:true,autoStartWiring:true,workers:Math.max(1,Math.min(16,require('node:os').availableParallelism())),maxTracks:8,maxX:80,maxZ:80,maxY:48,maxAspect:1.5,maxSpatialAspect:2,maxListeningRadius:40});
+ if(automatic)Object.assign(opt,{speed:1,transpose:0,pitch:opt.pitch||'strict',timing:'auto',soundEngine:opt.soundEngine||'vanilla',backend:'cpu',heavyCore:false,externalInputs:true,autoStartWiring:true,workers:Math.max(1,Math.min(16,require('node:os').availableParallelism())),maxTracks:8,unboundedSize:true,maxAspect:Number(options.maxAspect??1.5),maxSpatialAspect:Number(options.maxSpatialAspect??2),maxListeningRadius:0});
  if(opt.soundEngine==='auto')throw Error('请明确选择纯原版音符盒或 ENB 模组版；程序不再自动切换。');
  const notes=raw.notes.filter(n=>n.velocity!==0&&raw.layers[n.layer]?.volume!==0);
  if(!notes.length)throw Error('文件没有可发声的音符。');
@@ -23,7 +23,6 @@ function plan(raw,options={}){
  if(automatic){
   opt.objective=notes.length>20000||peak>136?'toxic':'volume';
   opt.seconds=notes.length<2000?30:notes.length<10000?60:180;
-  if(notes.length<128){opt.maxSpatialAspect=0;opt.maxAspect=0;} // Tiny phrases need not be inflated to a cube.
   messages.push(opt.objective==='toxic'?`密度较高（最多 ${peak} 音同时发声），自动使用毒曲：宽高 ≤100，长度不限，含命令方块跟随。`:`自动体积优先：CPU ${opt.workers} 线程，搜索预算 ${opt.seconds} 秒，有可用方案后自动导出。`);
   require('./versions.cjs').get(opt.target);
  }
@@ -43,11 +42,12 @@ function plan(raw,options={}){
  if(opt.pitch==='fold')messages.push('按你的选择折叠超出音域的音符；起音节奏保留，具体音高变更数记录在转换报告。');
  if(automatic){
   messages.push('普通布线、沙子独立音轨和层间压缩共同搜索；符合条件时自动检查乐句复用。自动连接外部启动线。');
-  if(opt.objective==='volume')messages.push(notes.length<128?'短片段自动取消长宽与三维比例限制，避免凑形状；主体上限 80 × 80 × 48，听音半径 40 格。':'主体上限 80 × 80 × 48；长宽差 ≤50%，听音半径 40 格。无解时可在手动配置中放宽限制。');
+  if(opt.objective==='volume')messages.push(`不限制主体长、宽、高或听音半径；水平长短边比例 ${opt.maxAspect||'不限'}，整体最长边 / 最短边 ${opt.maxSpatialAspect||'不限'}。搜索范围随歌曲规模扩展。`);
   if(velocity&&opt.soundEngine!=='extended')messages.push('当前音域方案不保留逐音符力度。');
  }
  // Normalize once for early validation (microtones/custom instruments included).
  const song=require('./normalize.cjs').normalize(raw,opt);
+ if(automatic&&opt.objective==='volume')Object.assign(opt,require('./automatic-space.cjs').domain(song,opt));
  return {options:opt,summary:{sourceType:raw.sourceType||'nbs',midi:opt.midiPlan||null,tempo:raw.sourceType==='midi'?60e6/raw.midi.tempo[0].us:raw.tempo,notes:notes.length,onsets:counts.size,peak,durationSeconds:song.midiConversion?.durationSeconds??duration,keyRange:[low,high],timeResolution:Number(opt.timeResolution??10),timing:opt.timing||'strict',soundEngine:opt.soundEngine||'vanilla',objective:opt.objective||'volume',seconds:opt.seconds,messages,warnings:song.warnings}};
 }
 function inspect(options){return plan(parse(options.input,{maxNotes:1000000}),options);}

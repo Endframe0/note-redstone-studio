@@ -40,7 +40,7 @@ function search20(song,opt,progress=()=>{}){
    if(round&&Date.now()>=deadline)break;
    if(round&&opt.stopFile&&fs.existsSync(opt.stopFile))break;
    const p=phases[i],seconds=Math.max(.2,Math.min(30,(deadline-Date.now())/1000/(phases.length-i)));
-   const phaseOpt={...opt,seconds,stopFile:round?opt.stopFile:undefined,autoStartWiring:false,experimentalPhraseReuse:false,reuseDecision:{enabled:false,reason:'20t phase isolation'},motifAnalysis:undefined,maxTracks:perPhase,maxY:phases.length===2?Math.max(4,Math.floor((Number(opt.maxY??48)-2)/2)):opt.maxY,maxSpatialAspect:0,maxListeningRadius:0,checkpoint:opt.checkpoint?opt.checkpoint+'.20gt-'+p.phase:undefined,seedParams:parts[i]?.m.searchParams?[parts[i].m.searchParams]:[]};
+   const phaseOpt={...opt,seconds,stopFile:round?opt.stopFile:undefined,autoStartWiring:false,experimentalPhraseReuse:false,reuseDecision:{enabled:false,reason:'20t phase isolation'},motifAnalysis:undefined,maxTracks:perPhase,maxY:phases.length===2?Math.max(4,Math.floor((Number(opt.maxY??48)-2)/2)):opt.maxY,maxSpatialAspect:opt.unboundedSize?Number(opt.maxSpatialAspect||0)*phases.length:0,maxListeningRadius:0,checkpoint:opt.checkpoint?opt.checkpoint+'.20gt-'+p.phase:undefined,seedParams:parts[i]?.m.searchParams?[parts[i].m.searchParams]:[]};
    progress({phase:'log',message:`20t ${p.phase?'奇数':'偶数'}刻线路，第 ${round+1} 轮（全部候选按最终主体尺寸检查）。`});
    try{
     const result=searchPortfolio(p.song,phaseOpt,e=>{if(e.phase==='log')progress(e);if(e.phase==='portfolio-progress')progress({...e,elapsed:(Date.now()-started)/1000,attempts:stats.attempts+e.attempts,improvements:stats.improvements,bestVolume:best?.volume??null,dimensionsXZY:best?[best.dimensions[0],best.dimensions[2],best.dimensions[1]]:null})});

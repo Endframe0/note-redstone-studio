@@ -11,7 +11,7 @@ function searchPortfolio(song,opt,progress=()=>{}){
  if(!['cpu','gpu'].includes(opt.backend||'cpu'))throw Error('未知计算设备');
  if(!Number.isInteger(Number(opt.workers??1))||Number(opt.workers??1)<1||Number(opt.workers??1)>128)throw Error('并行线程必须为 1–128');
  if(!Number.isInteger(Number(opt.maxTracks??8))||Number(opt.maxTracks??8)<1||Number(opt.maxTracks??8)>8)throw Error('并行线路上限必须为 1–8');
- for(const [key,max] of [['maxX',512],['maxZ',512],['maxY',384]])if(!Number.isFinite(Number(limits[key]))||Number(limits[key])<4||Number(limits[key])>max)throw Error('主体尺寸上限无效');
+ for(const [key,max] of [['maxX',512],['maxZ',512],['maxY',384]])if(!Number.isFinite(Number(limits[key]))||Number(limits[key])<4||!limits.unboundedSize&&Number(limits[key])>max)throw Error('主体尺寸上限无效');
  for(const [key,max] of [['maxAspect',128],['maxSpatialAspect',128],['maxListeningRadius',512]]){const value=Number(limits[key]);if(!Number.isFinite(value)||value!==0&&(value<1||value>max))throw Error(key+' 参数无效');}
  const dir=fs.mkdtempSync(path.join(os.tmpdir(),'nbs-portfolio-')),stopFile=path.join(dir,'stop'),flags=new Int32Array(new SharedArrayBuffer(4));
  const file=opt.checkpoint?opt.checkpoint+'.portfolio.json':null;

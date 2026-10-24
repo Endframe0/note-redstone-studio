@@ -68,7 +68,10 @@ function buildFields(){
   const copy=document.createElement('span');copy.className='switch-copy';copy.textContent=title;const small=document.createElement('small');small.textContent=desc;copy.append(small);
   const input=document.createElement('input');input.type='checkbox';input.className='switch';input.id=key;input.dataset.setting=key;input.setAttribute('role','switch');row.append(copy,input);$('#switchFields').append(row);
  }
- $$('[data-setting]').forEach(el=>el.addEventListener('change',()=>{values[el.dataset.setting]=el.type==='checkbox'?el.checked:el.value;applyDependencies();saveSoon();scheduleAnalysis();}));
+ $$('[data-setting]').forEach(el=>{
+  if(el.type==='number')el.addEventListener('input',()=>{if(el.value!==''&&el.validity.valid){values[el.dataset.setting]=el.value;saveSoon();}});
+  el.addEventListener('change',()=>{if(el.type==='number'&&!el.reportValidity())return;values[el.dataset.setting]=el.type==='checkbox'?el.checked:el.value;applyDependencies();saveSoon();scheduleAnalysis();});
+ });
 }
 function fill(){
  $$('[data-setting]').forEach(el=>{if(el.type==='checkbox')el.checked=values[el.dataset.setting];else el.value=values[el.dataset.setting];});
@@ -78,7 +81,8 @@ function applyDependencies(){
  const automatic=values.adaptive!==false,isMidi=/\.midi?$/i.test(paths.input||'');
  $('#setupHint').textContent=isMidi?'MIDI 自动适配 10t / 20t 和布局，纯原版 / ENB 由你选择；速度调整与量化误差见分析说明。':'自动配置负责时序和布局，纯原版 / ENB 由你选择，程序不会自行切换。';
  document.body.classList.toggle('auto-setup',automatic);
- $('#automaticFields').hidden=$('#autoSoundHint').hidden=!automatic;
+ $('#automaticFields').hidden=$('#autoSoundHint').hidden=$('#autoShapeFields').hidden=!automatic;
+ for(const id of ['aspect','spatial_aspect']){const parent=automatic?$('#autoShapeFields'):$('#shapeFields'),field=$('#'+id).parentElement;if(field.parentElement!==parent)parent.append(field);}
  const usesEnb=automatic?values.auto_sound==='ENB 模组音符盒':values.sound_engine.startsWith('ENB');
  $('#autoSoundHint').textContent=usesEnb?(isMidi?'ENB 模组版：需要 26.x 配套 ENB，保留 MIDI 时长、力度和渐变。':'ENB 模组版：需要对应版本的配套模组，保留扩展音域和音符力度。'):'纯原版：无需音域模组，保留乐器与起音。两八度音域；不能独立设置时长、淡入淡出和力度。超出音域可自行选择八度折叠。';
  $('#autoSetup').setAttribute('aria-pressed',String(automatic));$('#manualSetup').setAttribute('aria-pressed',String(!automatic));
@@ -94,11 +98,11 @@ function applyDependencies(){
   '适合每刻数百音符的黑乐谱。宽、高不超过 100 格，长度不限；自带启动与每游戏刻跟随。'][mode];
  const shape=['limit_0','limit_1','limit_2','aspect','spatial_aspect','listening_radius'];
  $$('[data-setting]').forEach(el=>{
-  const k=el.dataset.setting;el.disabled=state.running||(isMidi&&k==='timing')||(isMidi&&!usesEnb&&['midi_envelope','midi_fade_in','midi_fade_out'].includes(k))||(!volume&&(shape.includes(k)||['backend','heavy_core'].includes(k)))||(toxic&&k==='auto_start_wiring');
+  const k=el.dataset.setting;el.disabled=state.running||(isMidi&&k==='timing')||(!volume&&(!automatic&&shape.includes(k)||['backend','heavy_core'].includes(k)))||(toxic&&k==='auto_start_wiring');
  });
  if(toxic){values.auto_start_wiring=true;$('#auto_start_wiring').checked=true;}
- $('#shapeSummary').textContent=volume?`主体上限 ${values.limit_0} × ${values.limit_1} × ${values.limit_2} 格 · 听音半径 ${values.listening_radius}`:toxic?'毒曲固定宽高 ≤100 格 · 长度不限':'省材模式不限制主体尺寸';
- $('#shapeHelp').textContent=volume?'仅限制主体尺寸，外部启动线不计入；X × Z × Y 分别为长、宽、高。':toxic?'以下参数仅用于体积模式；毒曲使用固定的 100 格宽高上限。':'以下参数仅用于体积模式；省材模式以材料数量为目标。';
+ $('#shapeSummary').textContent=automatic?'自动扩展尺寸 · 只限制长宽和整体比例':volume?`主体上限 ${values.limit_0} × ${values.limit_1} × ${values.limit_2} 格 · 听音半径 ${values.listening_radius}`:toxic?'毒曲固定宽高 ≤100 格 · 长度不限':'省材模式不限制主体尺寸';
+ $('#shapeHelp').textContent=automatic?'不限制主体长、宽、高和听音半径，按歌曲规模搜索；仅保留下面两项比例。':volume?'仅限制主体尺寸，外部启动线不计入；X × Z × Y 分别为长、宽、高。':toxic?'以下参数仅用于体积模式；毒曲使用固定的 100 格宽高上限。':'以下参数仅用于体积模式；省材模式以材料数量为目标。';
  $('#soundHint').textContent=isMidi?(usesEnb?'MIDI 使用 26.x ENB，保留持续时间、力度与导入包络。':'MIDI 转原版音符盒：保留乐器、音高与起音，不保留独立时长、渐变与力度。'):values.sound_engine.startsWith('ENB')?'保留音符力度 × 音轨音量。需 ENB 配套模组，粘贴时保留方块实体 NBT。':values.sound_engine.startsWith('Quinn')?'需 Java 26.1.2、Quinn v1.3 数据包与资源包，投影粘贴须包含实体。':'原版两八度，无需额外模组；不能独立还原每个音符的力度与声像。';
  $('#computeNote').textContent=!volume?'此模式由 CPU 计算。搜索缓存会自动保存；转换中仍可取消。':values.backend.includes('GPU')?'GPU 加速普通几何搜索，其余模板继续使用 CPU。需要兼容 CUDA 的 NVIDIA 显卡。':'普通布线与压缩模板同时运行，自动保存当前最优。持续优化时，可随时点击“导出当前最优”。';
  $('#startBtn').disabled=state.running||!paths.input?.trim()||(values.adaptive!==false&&(analysisBusy||!analysisResult?.ok));
@@ -185,7 +189,7 @@ $('#fontMenuBtn').addEventListener('click',()=>{$('#themeOptions').hidden=true;$
 $('#fontMenuBack').addEventListener('click',()=>{$('#fontOptions').hidden=true;$('#themeOptions').hidden=false;$('#fontMenuBtn').setAttribute('aria-expanded','false');$('#fontMenuBtn').focus();});
 $$('[data-font-size]').forEach(b=>b.addEventListener('click',()=>{appearance.font_size=Number(b.dataset.fontSize);applyFont();saveSoon();}));
 $('#themeMenu').addEventListener('keydown',e=>{if(e.key==='ArrowLeft'&&!$('#fontOptions').hidden){e.preventDefault();$('#fontMenuBack').click();}if(e.key==='ArrowRight'&&document.activeElement===$('#fontMenuBtn')){e.preventDefault();$('#fontMenuBtn').click();}});
-$$('[data-edge]').forEach(el=>el.addEventListener('mousedown',e=>{if(e.button===0){e.preventDefault();api?.resize_window?.(el.dataset.edge);}}));
+$$('[data-edge]').forEach(el=>el.addEventListener('mousedown',e=>{if(e.button===0){e.preventDefault();call('resize_window',el.dataset.edge).catch(()=>{});}}));
 $('#profileSelect').addEventListener('change',async e=>{try{await persist();const r=await call('profile','load',Number(e.target.value));values=r.values;profiles=r.profiles;selected=r.selected;fill();toast(selected&&!profiles[selected-1].settings?'这是空配置槽，调整后点击保存。':'配置已载入');}catch{}});
 $('#saveProfile').addEventListener('click',async()=>{try{await persist();const r=await call('profile','save',selected,values);profiles=r.profiles;renderProfiles();toast('配置已保存，下次可直接载入。');}catch{}});
 $('#renameProfile').addEventListener('click',()=>{$('#profileName').value=profiles[selected-1].name;$('#renameDialog').showModal();$('#profileName').focus();});

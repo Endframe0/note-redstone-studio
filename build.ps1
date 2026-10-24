@@ -14,9 +14,9 @@ if ($LASTEXITCODE -ne 0) { throw 'GPU helper build failed' }
 New-Item -ItemType Directory -Force -Path '.\runtime\gpu' | Out-Null
 Copy-Item -Path '.\dist\gpu_backend\*' -Destination '.\runtime\gpu' -Recurse -Force
 }
-& $converterPython -m PyInstaller --noconfirm --clean --windowed --onedir --distpath $DistPath --name '音符工坊2.11.1' --icon 'desktop/studio.ico' --version-file 'desktop/version-info.txt' --add-data 'engine;engine' --add-data 'runtime;runtime' --add-data 'desktop;desktop' --add-data 'README-2.9.md;.' --collect-data webview --copy-metadata pywebview desktop_app.py
+& $converterPython -m PyInstaller --noconfirm --clean --windowed --onedir --distpath $DistPath --name '音符工坊2.11.2' --icon 'desktop/studio.ico' --version-file 'desktop/version-info.txt' --add-data 'engine;engine' --add-data 'runtime;runtime' --add-data 'desktop;desktop' --add-data 'README-2.9.md;.' --collect-data webview --copy-metadata pywebview desktop_app.py
 if ($LASTEXITCODE -ne 0) { throw 'PyInstaller failed' }
-$converterRelease = Join-Path $DistPath '音符工坊2.11.1'
+$converterRelease = Join-Path $DistPath '音符工坊2.11.2'
 Copy-Item -LiteralPath '.\README.md' -Destination (Join-Path $converterRelease '使用说明.md')
 Copy-Item -LiteralPath '.\README-2.9.md' -Destination (Join-Path $converterRelease '新版界面说明.md')
 

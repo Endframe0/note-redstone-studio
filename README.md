@@ -6,7 +6,7 @@
 
 从一份 NBS 或 MIDI，到一台可以在 Minecraft 中搭建的红石音乐机。
 
-[![Release](https://img.shields.io/badge/release-v2.11.1-647db5?style=flat-square)](https://github.com/Endframe0/note-redstone-studio/releases/latest) ![Platform](https://img.shields.io/badge/Windows-10%20%2F%2011-687ca5?style=flat-square) ![Minecraft](https://img.shields.io/badge/Java-1.20%20%E2%80%94%2026.3-7c80ba?style=flat-square) [![License](https://img.shields.io/badge/License-AGPL--3.0--or--later-728695?style=flat-square)](LICENSE)
+[![Release](https://img.shields.io/badge/release-v2.11.2-647db5?style=flat-square)](https://github.com/Endframe0/note-redstone-studio/releases/latest) ![Platform](https://img.shields.io/badge/Windows-10%20%2F%2011-687ca5?style=flat-square) ![Minecraft](https://img.shields.io/badge/Java-1.20%20%E2%80%94%2026.3-7c80ba?style=flat-square) [![License](https://img.shields.io/badge/License-AGPL--3.0--or--later-728695?style=flat-square)](LICENSE)
 
 **[下载 Windows 便携版](https://github.com/Endframe0/note-redstone-studio/releases/latest)** · [开始使用](#开始使用) · [版本兼容](docs/compatibility.md) · [作者致谢](#作者致谢)
 
@@ -37,7 +37,7 @@
 
 ### 01 · 下载并打开
 
-在 [Releases](https://github.com/Endframe0/note-redstone-studio/releases/latest) 下载 `Note-Redstone-Studio-2.11.1-Windows-x64.zip`，**完整解压**后运行 `音符工坊2.11.1.exe`。不要只取出 EXE。
+在 [Releases](https://github.com/Endframe0/note-redstone-studio/releases/latest) 下载 `Note-Redstone-Studio-2.11.2-Windows-x64.zip`，**完整解压**后运行 `音符工坊2.11.2.exe`。不要只取出 EXE。
 
 - Windows 10 / 11，64 位；便携版无需另外安装 Python 或 Node.js。
 - 需要 [Microsoft Edge WebView2 Runtime](https://developer.microsoft.com/microsoft-edge/webview2/)。多数 Windows 电脑已有；缺少时安装 Evergreen Runtime。
@@ -45,7 +45,7 @@
 
 ### 02 · 导入音乐，选择版本
 
-点击 **选择音乐**，指定输出目录。保持 **自动配置**，先选择 Minecraft 版本范围和具体版本，再明确选择 **纯原版音符盒 / ENB 模组音符盒**。软件只自动安排节拍和布局，不会替你切换制作版本。
+点击 **选择音乐**，指定输出目录。保持 **自动配置**，先选择 Minecraft 版本范围和具体版本，再明确选择 **纯原版音符盒 / ENB 模组音符盒**。软件只自动安排节拍和布局，不会替你切换制作版本。自动体积搜索只限制可调的水平、三维比例，不设置固定长宽高或听音半径上限；搜索规模随歌曲调整，并不保证全局最优。高密度毒曲仍使用独立的长轨模式。
 
 **MIDI 可直接转为原版或模组音符盒。**参考 Open Note Block Studio 的乐器映射，26.1+ 另外适配四种铜块铜管音色，自动比较 10t / 20t，并在允许范围内调整 BPM。纯原版保留乐器、音高与起音；超出两八度可自行选择折叠。ENB 模组版另外读取 Note Off、延音踏板和力度，并提供淡入淡出设置。持续时间与包络需要 **26.x 配套 ENB**；短采样不会自动延长成持续长音，无法精确对齐时会显示量化误差。见 [MIDI 导入说明](docs/midi.md)。
 

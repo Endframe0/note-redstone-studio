@@ -27,7 +27,7 @@ function evaluate(params,force=false){
  const key=params.cap+':'+params.rows+':'+params.spacing+':'+params.branchMode+':'+params.counts.join(',')+':'+(params.rowShifts||[]).join(',');if(seen.has(key))return seen.get(key);
  attempts++;let result=null;
  try{const p=plan(song,params,profiles[params.branchMode||'delayed']),[x,y,z]=p.dimensions;
-  if(x>opt.maxX||y>opt.maxY||z>opt.maxZ||p.volume>8000000)return null;
+  if(!opt.unboundedSize&&(x>opt.maxX||y>opt.maxY||z>opt.maxZ||p.volume>8000000))return null;
   const meanSpan=p.rawSpans.reduce((a,b)=>a+b,0)/p.rawSpans.length,maxSpan=Math.max(1,...p.rawSpans);
   let score=p.volume*shapePenalty(p.dimensions,opt)*(1+.10*p.penalty+.02*meanSpan/maxSpan);
   if(fits(p.dimensions,opt)&&(force||(p.volume<ownBest&&p.volume<=Atomics.load(flags,1)))){builds++;

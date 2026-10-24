@@ -130,3 +130,8 @@ html{font-size:13px}
 
 /* Keep the full English product name legible inside the compact sidebar. */
 .brand small,[data-theme=glass] .brand small{font-family:"Segoe UI",sans-serif;font-size:8.5px;letter-spacing:0;line-height:1.45;white-space:normal;max-width:112px}
+
+/* Sizing zones remain above the frameless title bar and WebView content. */
+.resize-handles>div{z-index:1000;touch-action:none}
+.resize-handles [data-edge=top],.resize-handles [data-edge=bottom]{height:6px}
+.resize-handles [data-edge=left],.resize-handles [data-edge=right]{width:6px}

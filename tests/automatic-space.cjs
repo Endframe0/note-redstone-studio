@@ -1,0 +1,16 @@
+'use strict';
+const assert=require('node:assert/strict');
+const {plan}=require('../engine/adaptive.cjs'),{fits}=require('../engine/objective.cjs');
+const raw={version:5,tempo:10,name:'automatic space fixture',layers:[{volume:100}],notes:Array.from({length:800},(_,i)=>({tick:i*2,layer:0,instrument:0,key:45+i%5,velocity:100,pitch:0,panning:100}))};
+const opt=plan(raw,{adaptive:true,target:'26.1.2',maxAspect:1.5,maxSpatialAspect:2}).options;
+assert.equal(opt.maxListeningRadius,0);assert.equal(opt.unboundedSize,true);
+assert(fits([900,600,800],opt),'large proportional candidate must not hit an absolute size/radius cap');
+assert(!fits([900,100,800],opt),'height ratio still enforced');
+assert(!fits([900,600,400],opt),'horizontal ratio still enforced');
+assert(!fits([900,600,800],{...opt,unboundedSize:false}),'manual absolute limits still enforced');
+assert.equal(plan(raw,{adaptive:true,target:'26.1.2',maxAspect:1.2,maxSpatialAspect:1.5}).options.maxAspect,1.2);
+assert.equal(plan(raw,{adaptive:true,target:'26.1.2',maxAspect:0,maxSpatialAspect:0}).options.maxSpatialAspect,0);
+const small=plan({...raw,notes:raw.notes.slice(0,16)},{adaptive:true,target:'26.1.2'}).options;
+assert.equal(small.maxSpatialAspect,2,'automatic must not silently remove requested ratio on short music');
+assert(opt.searchDomain.extent>small.searchDomain.extent,'enumeration grows with song instead of fixed 80x80x48');
+console.log('PASS automatic space: no size/radius cap, ratios enforced, manual bounds preserved, song-scaled enumeration');
