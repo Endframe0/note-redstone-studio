@@ -16,9 +16,9 @@ function parse(file,{maxNotes=1000000}={}){
  if(format>1)throw Error('暂不支持 MIDI Format 2 独立序列，请先导出为 Format 0 或 1。');
  if(!ppq||(ppq&0x8000))throw Error('请使用按拍计时（PPQ）的 MIDI；暂不支持 SMPTE 时间码。');
  if(!tracks||tracks>4096||(format===0&&tracks!==1))throw Error('MIDI 轨道数量无效。');
- const events=[],trackNames=[];let eventCount=0,lastTick=0,hasSysEx=false;
+ const events=[],trackNames=[];let eventCount=0,lastTick=0,hasSysEx=false,endedTracks=0,lastTrackDataStart=0,tailWarning='';
  for(let track=0;track<tracks;track++){
-  if(str(4)!=='MTrk')throw Error('MIDI 缺少 MTrk 音轨。');const len=u32();need(len);const end=p+len;let tick=0,running=0,order=0;
+  if(str(4)!=='MTrk')throw Error('MIDI 缺少 MTrk 音轨。');const len=u32();need(len);lastTrackDataStart=p;const end=p+len;let tick=0,running=0,order=0;
   const byte=()=>{if(p>=end)throw Error('MIDI 音轨截断。');return b[p++]};
   const vlq=()=>{let v=0;for(let i=0;i<4;i++){const x=byte();v=v*128+(x&127);if(!(x&128))return v}throw Error('MIDI VLQ 超过 4 字节。')};
   while(p<end){
@@ -29,7 +29,7 @@ function parse(file,{maxNotes=1000000}={}){
    if(status===255){running=0;const type=byte(),n=vlq();if(p+n>end)throw Error('MIDI 元事件截断。');
     if(type===81){if(n!==3)throw Error('MIDI tempo 事件长度无效。');const us=b.readUIntBE(p,3);if(!us)throw Error('MIDI BPM 无效。');events.push({...e,type:'tempo',us})}
     if(type===3)trackNames[track]=b.toString('utf8',p,p+n).slice(0,256);
-    p+=n;if(type===47){if(n)throw Error('MIDI 结束事件无效。');p=end;break}continue;
+    p+=n;if(type===47){if(n)throw Error('MIDI 结束事件无效。');endedTracks++;p=end;break}continue;
    }
    if(status===240||status===247){running=0;const n=vlq();if(p+n>end)throw Error('MIDI SysEx 截断。');p+=n;hasSysEx=true;continue}
    if(status>=240)throw Error('不支持的 MIDI 系统事件。');running=status;
@@ -37,7 +37,13 @@ function parse(file,{maxNotes=1000000}={}){
    if([8,9,11,12,14].includes(kind))events.push({...e,type:kind,ch,a,c});
   }
  }
- if(p!==b.length)throw Error('MIDI 含无法识别的尾部数据。');
+ if(p!==b.length){
+  const tail=b.subarray(p),duplicate=tail.length<=p-lastTrackDataStart&&tail.equals(b.subarray(p-tail.length,p));
+  // Only tolerate proven suffix duplication or zero padding after every
+  // declared track has a valid End-of-Track. Never guess at extra note data.
+  if(endedTracks===tracks&&(duplicate||tail.every(v=>v===0)))tailWarning=`MIDI 兼容读取：全部 ${tracks} 条音轨已完整结束，忽略末尾 ${tail.length} 字节${duplicate?'重复尾部':'零填充'}；原文件未改动。`;
+  else throw Error('MIDI 含无法识别的尾部数据，不能确认是否为额外音轨。');
+ }
  events.sort((a,b)=>a.tick-b.tick||a.track-b.track||a.order-b.order);
  const tempo=[{tick:0,us:500000,numerator:0}];let currentUs=500000,t0=0,numerator=0;
  for(const e of events)if(e.type==='tempo'){
@@ -72,7 +78,7 @@ function parse(file,{maxNotes=1000000}={}){
   const q=ch.active.get(e.a)||[];q.push(n);ch.active.set(e.a,q);
  }
  for(const ch of channels){for(const q of ch.active.values())for(const n of q){finish(n,lastTick);unterminated++}for(const n of ch.held)finish(n,lastTick)}
- const compatibilityWarnings=[];
+ const compatibilityWarnings=tailWarning?[tailWarning]:[];
  if(unterminated)compatibilityWarnings.push(`${unterminated} 个 MIDI 音符缺少 Note Off，持续到文件结尾。`);
  if(orphan)compatibilityWarnings.push(`忽略 ${orphan} 个没有对应 Note On 的 Note Off。`);
  if(unmapped)compatibilityWarnings.push(`${unmapped} 个非映射打击乐音符使用小鼓默认音高近似。`);

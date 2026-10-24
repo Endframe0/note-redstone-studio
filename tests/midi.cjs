@@ -9,6 +9,10 @@ const tempo=(tick,us)=>[tick,255,81,3,(us>>16)&255,(us>>8)&255,us&255];
 const buffer=smf([[tempo(0,500000),tempo(960,600000)],[[0,176,7,127],[0,176,11,127],[0,192,24],[0,144,60,100],[120,64,80],[240,128,60,0],[240,176,64,127],[360,128,64,0],[480,176,64,0],[480,144,60,90],[720,144,60,70],[960,128,60,0],[1200,128,60,0],[1440,153,36,127],[1680,137,36,0]]]);
 const raw=parse(buffer);assert.equal(raw.notes.length,5);assert.equal(raw.notes[0].key,51);assert.equal(raw.notes[0].durationSeconds,.25);assert.equal(raw.notes[1].midiEndTick,480);assert.equal(raw.notes[1].durationSeconds,.375);assert.equal(raw.notes[2].midiEndTick,960);assert.equal(raw.notes[3].midiEndTick,1200);assert.equal(raw.notes[4].instrument,2);assert.equal(raw.notes[0].midiVelocity,100);
 assert.throws(()=>parse(buffer.subarray(0,-2)),/截断/);const wrong=Buffer.from(buffer);wrong.writeUInt16BE(2,8);assert.throws(()=>parse(wrong),/Format 2/);
+const duplicateTail=parse(Buffer.concat([buffer,buffer.subarray(-20)]));assert.deepEqual(duplicateTail.notes,raw.notes);assert(duplicateTail.compatibilityWarnings.some(s=>s.includes('20 字节重复尾部')));
+assert.deepEqual(parse(Buffer.concat([buffer,Buffer.alloc(8)])).notes,raw.notes);
+assert.throws(()=>parse(Buffer.concat([buffer,Buffer.from([1,2,3])])),/无法识别的尾部/);
+assert.throws(()=>parse(Buffer.concat([buffer,Buffer.from('MTrk\x00\x00\x00\x04\x00\xff\x2f\x00','latin1')])),/额外音轨/);
 const running=smf([[[0,144,60,127],[120,64,80],[240,60,0],[480,64,0]]]);assert.equal(parse(running).notes.length,2);
 function rhythm(us,step,count=100){const e=[tempo(0,us)];for(let i=0;i<count;i++){e.push([i*step,144,60,100],[i*step+Math.max(1,step-1),128,60,0])}return parse(smf([e]));}
 const slow=rhythm(600000,240),slowPlan=timing(slow);assert.equal(slowPlan.resolution,10);assert.equal(slowPlan.maxSpeedChangePercent,0);assert(slowPlan.exact);
