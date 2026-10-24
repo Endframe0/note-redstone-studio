@@ -1,0 +1,6 @@
+{
+  "model": {
+    "type": "minecraft:model",
+    "model": "extendednoteblock:item/global_redstone_receiver"
+  }
+}

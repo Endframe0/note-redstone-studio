@@ -1,0 +1,18 @@
+plugins { id 'fabric-loom' version '1.16.3' }
+def mc = project.findProperty('mcVersion') ?: '1.20.1'
+def old = mc == '1.20.1'
+version = '1.0.0+mc' + mc
+group = 'local.nbs'
+base { archivesName = 'enb-nbs-compat' }
+repositories { mavenCentral() }
+loom { splitEnvironmentSourceSets(); mods { 'enb_nbs_compat' { sourceSet sourceSets.main; sourceSet sourceSets.client } } }
+sourceSets { main { java.srcDir 'versions/'+mc+'/main/java'; resources.srcDir 'versions/'+mc+'/main/resources' }; client { java.srcDir 'versions/'+mc+'/client/java' } }
+dependencies {
+ minecraft 'com.mojang:minecraft:'+mc
+ mappings 'net.fabricmc:yarn:'+mc+'+build.'+(old ? '10' : '3')+':v2'
+ modImplementation 'net.fabricmc:fabric-loader:0.19.3'
+ modImplementation 'net.fabricmc.fabric-api:fabric-api:'+(old ? '0.92.6+1.20.1' : '0.116.13+1.21.1')
+ modImplementation files('../../companion/配套模组/'+mc+'/extendednoteblock-1.9.1+'+mc+'.jar')
+}
+tasks.withType(JavaCompile).configureEach { options.release = old ? 17 : 21 }
+java { withSourcesJar(); sourceCompatibility=JavaVersion.toVersion(old?17:21); targetCompatibility=sourceCompatibility }

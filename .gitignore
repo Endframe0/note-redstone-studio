@@ -1,0 +1,16 @@
+__pycache__/
+*.pyc
+.venv/
+.gradle/
+**/build/
+**/run/
+dist/
+release/
+runtime/*
+!runtime/Node-LICENSE.txt
+companion/
+tests/version-output/
+tests/output/
+*.log
+.env
+*.nbs

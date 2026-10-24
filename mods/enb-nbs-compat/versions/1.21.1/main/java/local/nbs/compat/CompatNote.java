@@ -1,0 +1,1 @@
+package local.nbs.compat; public interface CompatNote { String nbsVoice(); }

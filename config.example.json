@@ -1,0 +1,11 @@
+{
+  "input": "your-song.nbs",
+  "output": "tests/output",
+  "target": "26.1.2",
+  "seconds": 30,
+  "workers": 4,
+  "maxX": 80,
+  "maxZ": 80,
+  "maxY": 48,
+  "autoStartWiring": true
+}

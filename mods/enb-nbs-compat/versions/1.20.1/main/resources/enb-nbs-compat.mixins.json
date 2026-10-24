@@ -1,0 +1,15 @@
+{
+  "required": true,
+  "package": "local.nbs.compat.mixin",
+  "compatibilityLevel": "JAVA_17",
+  "mixins": [
+    "EntityMixin",
+    "BlockMixin"
+  ],
+  "client": [
+    "SoundMixin"
+  ],
+  "injectors": {
+    "defaultRequire": 1
+  }
+}

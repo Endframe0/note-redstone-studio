@@ -1,0 +1,103 @@
+<!doctype html>
+<html lang="zh-CN" data-theme="glass">
+<head>
+  <meta charset="UTF-8"><meta name="viewport" content="width=device-width,initial-scale=1">
+  <meta http-equiv="Content-Security-Policy" content="default-src 'self' data:; script-src 'self' 'unsafe-inline' 'unsafe-eval'; style-src 'self' 'unsafe-inline'; img-src 'self' data:; connect-src 'self'; object-src 'none'">
+  <title>NBS · 红石工坊</title><link rel="stylesheet" href="studio.css">
+</head>
+<body>
+<svg class="icons" aria-hidden="true"><defs>
+ <symbol id="i-cube" viewBox="0 0 24 24"><path d="m12 3 9 5v8l-9 5-9-5V8zM3 8l9 5 9-5M12 13v8M7.5 5.5l9 5"/></symbol>
+ <symbol id="i-wave" viewBox="0 0 24 24"><path d="M3 10v4m4-8v12m5-15v18m5-15v12m4-8v4"/></symbol>
+ <symbol id="i-grid" viewBox="0 0 24 24"><rect x="3" y="3" width="7" height="7" rx="1.5"/><rect x="14" y="3" width="7" height="7" rx="1.5"/><rect x="3" y="14" width="7" height="7" rx="1.5"/><rect x="14" y="14" width="7" height="7" rx="1.5"/></symbol>
+ <symbol id="i-tune" viewBox="0 0 24 24"><path d="M4 7h5m5 0h6M4 17h10m5 0h1"/><circle cx="11.5" cy="7" r="2.5"/><circle cx="16.5" cy="17" r="2.5"/></symbol>
+ <symbol id="i-arrow" viewBox="0 0 24 24"><path d="M5 12h14m-6-6 6 6-6 6"/></symbol>
+ <symbol id="i-folder" viewBox="0 0 24 24"><path d="M3 7a2 2 0 0 1 2-2h5l2 2h7a2 2 0 0 1 2 2v10H3z"/></symbol>
+ <symbol id="i-sun" viewBox="0 0 24 24"><circle cx="12" cy="12" r="4"/><path d="M12 2v2m0 16v2M2 12h2m16 0h2M5 5l1.4 1.4m11.2 11.2L19 19M5 19l1.4-1.4M17.6 6.4 19 5"/></symbol>
+ <symbol id="i-moon" viewBox="0 0 24 24"><path d="M20.8 13.4A9 9 0 0 1 10.6 3.2a9 9 0 1 0 10.2 10.2Z"/></symbol>
+ <symbol id="i-check" viewBox="0 0 24 24"><path d="m5 12 4 4L19 6"/></symbol>
+ <symbol id="i-close" viewBox="0 0 24 24"><path d="m6 6 12 12M6 18 18 6"/></symbol>
+ <symbol id="i-play" viewBox="0 0 24 24"><path d="m8 4 12 8-12 8z"/></symbol>
+ <symbol id="i-save" viewBox="0 0 24 24"><path d="M4 3h13l4 4v14H3V3zM7 3v6h9V3M7 21v-8h10v8"/></symbol>
+ <symbol id="i-chevron" viewBox="0 0 24 24"><path d="m8 4 8 8-8 8"/></symbol>
+ <symbol id="i-file" viewBox="0 0 24 24"><path d="M14 2H5v20h14V7zM14 2v6h5M8 13h8m-8 4h5"/></symbol>
+ <symbol id="i-leaf" viewBox="0 0 24 24"><path d="M20 3C8 1 2 7 5 15c7 6 17 1 15-12ZM3 21l12-12"/></symbol>
+ <symbol id="i-glass" viewBox="0 0 24 24"><path d="m12 3 9 5-9 5-9-5zM3 12l9 5 9-5M3 16l9 5 9-5"/></symbol>
+ <symbol id="i-minimize" viewBox="0 0 24 24"><path d="M5 13h14"/></symbol>
+ <symbol id="i-maximize" viewBox="0 0 24 24"><rect x="5" y="5" width="14" height="14" rx="1"/></symbol>
+ <symbol id="i-restore" viewBox="0 0 24 24"><path d="M9 8V4h11v11h-4"/><rect x="4" y="9" width="11" height="11" rx="1"/></symbol>
+ <symbol id="i-bolt" viewBox="0 0 24 24"><path d="m13 2-9 12h7l-1 8 10-13h-7z"/></symbol>
+</defs></svg>
+<div class="window-controls"><button id="minimizeWindow" aria-label="最小化" title="最小化"><svg><use href="#i-minimize"/></svg></button><button id="maximizeWindow" aria-label="最大化" title="最大化"><svg><use href="#i-maximize"/></svg></button><button id="closeWindow" aria-label="关闭窗口" title="关闭窗口"><svg><use href="#i-close"/></svg></button></div>
+<div class="app-shell">
+ <aside class="sidebar">
+  <a class="brand" href="#music" aria-label="红石工坊首页"><span class="brand-mark"><svg><use href="#i-cube"/></svg></span><span>红石工坊<small>NBS STUDIO</small></span></a>
+  <div class="workspace-label">工作空间 <span>01</span></div>
+  <nav aria-label="设置导航">
+   <button class="nav-item active" data-scroll="music"><svg><use href="#i-wave"/></svg>音乐与输出<span>1</span></button>
+   <button class="nav-item" data-scroll="setup"><svg><use href="#i-grid"/></svg>转换方式<span>2</span></button>
+   <button class="nav-item" data-scroll="compute"><svg><use href="#i-tune"/></svg>高级设置<span>3</span></button>
+   <button class="nav-item" id="showLog"><svg><use href="#i-file"/></svg>转换记录<span id="logCount">0</span></button>
+  </nav>
+  <div class="sidebar-note"><span class="tiny-symbol">♪</span><p>让每一段旋律<br>都有自己的形状。</p><div class="note-rule"></div><small>音乐 → 电路 → 世界</small></div>
+  <div class="sidebar-bottom"><div class="online"><span></span>本地运行 · 无需联网</div><div class="version">DESKTOP <b id="version">2.9.3</b></div><button id="aboutBtn" class="text-button">关于与设计致谢 ↗</button></div>
+ </aside>
+ <header class="topbar" id="windowTitlebar" title="拖动窗口 · 双击最大化"><div class="title-drag" title="拖动窗口 · 双击最大化"><div class="breadcrumb">工作空间 <span>/</span> <strong>新建转换</strong></div></div><div class="top-actions"><button class="theme-toggle" id="themeBtn" aria-label="选择外观主题" aria-haspopup="menu" aria-expanded="false"><svg id="themeIcon"><use href="#i-glass"/></svg><span id="themeLabel">浮光</span></button></div></header>
+ <main class="workspace">
+  <div class="editor" id="editor">
+   <div class="hero"><div><div class="eyebrow"><span></span> MUSIC INTO MATTER</div><h1>把音乐，<em>折叠成红石。</em></h1><p>从一个 NBS 文件开始，找到旋律在方块里的形状。</p></div><div class="hero-glyph" aria-hidden="true"><svg><use href="#i-cube"/></svg><span>♫</span></div></div>
+   <section class="panel source-panel" id="music"><div class="section-head"><h2><span class="step">01</span> 音乐与输出</h2><span class="micro-label">.NBS → .LITEMATIC</span></div>
+    <div class="source-card" id="sourceCard"><div class="file-emblem"><svg><use href="#i-wave"/></svg></div><div class="file-info"><strong id="fileName">选择你的旋律</strong><span id="fileSub">支持新旧版 Note Block Studio 文件</span></div><button class="button" id="pickInput">选择 NBS <svg><use href="#i-folder"/></svg></button></div>
+    <div class="path-edit"><label for="inputPath">文件路径</label><input id="inputPath" type="text" placeholder="也可以在这里粘贴 NBS 文件路径" spellcheck="false"></div>
+    <div class="output-row"><label for="outputPath"><svg><use href="#i-folder"/></svg>输出到</label><input id="outputPath" type="text" spellcheck="false"><button class="icon-button" id="pickOutput" aria-label="更改输出目录" title="更改输出目录"><svg><use href="#i-chevron"/></svg></button></div>
+   </section>
+   <section class="panel setup-panel" id="setup">
+    <div class="section-head"><h2><span class="step">02</span> 转换方式</h2><span class="badge">选好音乐，就能开始</span></div>
+    <div class="setup-switch" role="group" aria-label="转换方式"><button id="autoSetup" aria-pressed="true">自动配置 <small>按歌曲选择，适合直接使用</small></button><button id="manualSetup" aria-pressed="false">手动配置 <small>保留全部参数与配置槽</small></button></div>
+    <div class="field quick-target"><label for="quickRange">Minecraft 版本范围</label><select id="quickRange" aria-label="Minecraft 版本范围"></select><label for="quickTarget">具体版本</label><select id="quickTarget" aria-label="具体 Minecraft 版本"></select><small id="versionHint"></small></div>
+    <div id="songAnalysis" class="song-analysis" role="status" aria-live="polite"><canvas id="analysisRose" width="100" height="100" aria-label="Rose Four 文件识别动画" hidden></canvas><strong id="analysisTitle">等待选择 NBS 文件</strong><p id="analysisFacts">自动识别速度、音域和密度，不修改源文件。</p><ul id="analysisDecisions"></ul></div>
+    <p class="help" id="setupHint">自动配置保持原曲速度和音高；需要模组时会在这里提示。手动参数独立保留。</p>
+   </section>
+   <section class="panel" id="layout"><div class="section-head"><h2><span class="step">02</span> 布局与压缩</h2><span class="badge">多模板共同搜索</span></div>
+    <div class="mode-picker" role="group" aria-label="优化目标"><span class="mode-indicator"></span>
+     <button class="mode active" data-mode="0" aria-pressed="true"><svg><use href="#i-cube"/></svg><strong>体积优先</strong><small>把空间留给世界</small></button>
+     <button class="mode" data-mode="1" aria-pressed="false"><svg><use href="#i-leaf"/></svg><strong>极限省材</strong><small>让乐句重复使用</small></button>
+     <button class="mode" data-mode="2" aria-pressed="false"><svg><use href="#i-bolt"/></svg><strong>毒曲模式</strong><small>为密集黑乐谱准备</small></button>
+    </div><p class="mode-hint" id="modeHint"></p>
+    <div class="field-grid" id="primaryFields"></div>
+    <div class="sound-note" id="soundNote"><span>♪</span><p id="soundHint"></p></div>
+    <details class="disclosure" id="shapeDetails"><summary><div><strong>空间与听音范围</strong><small id="shapeSummary">限制主体尺寸，让音乐更集中</small></div><svg><use href="#i-chevron"/></svg></summary><div class="disclosure-body"><p class="help" id="shapeHelp">下面的限制仅用于体积优先模式，外部启动线不计入主体尺寸。</p><div class="bounds" id="boundsFields"></div><div class="field-grid single" id="shapeFields"></div></div></details>
+    <details class="disclosure"><summary><div><strong>时序、音高与布线</strong><small>20t、移调、沉重核心及启动电路</small></div><svg><use href="#i-chevron"/></svg></summary><div class="disclosure-body"><div class="field-grid" id="musicFields"></div><div class="switch-list" id="switchFields"></div><p class="help">普通布线、沙子独立音轨、层间压缩会共同搜索。体积模式自动分析重复度后决定是否复用乐句。</p></div></details>
+   </section>
+   <section class="panel" id="compute"><div class="section-head"><h2><span class="step">03</span> 计算设置</h2><span class="micro-label">SEARCH & REFINE</span></div><div class="field-grid" id="computeFields"></div><div class="compute-note" id="computeNote"></div>
+   </section>
+   <section class="panel profiles-panel"><div class="profile-box"><div><strong>常用配置</strong><p>记住这次的选择，下次接着用。</p></div><div class="profile-controls"><label class="sr-only" for="profileSelect">选择配置</label><select id="profileSelect"></select><button class="icon-button" id="saveProfile" aria-label="保存当前配置" title="保存当前配置"><svg><use href="#i-save"/></svg></button><button class="text-button" id="renameProfile">重命名</button></div></div>
+   </section>
+   <p class="editor-footnote">保留最小已找到方案 · 不宣称全局最优 · 所有计算在本机完成</p>
+  </div>
+  <aside class="monitor">
+   <div class="monitor-header"><span class="eyebrow">LIVE WORKBENCH</span><span class="status-pill" id="phasePill">待开始</span></div>
+   <div class="stage" id="stage"><div class="stage-grid"></div><div class="stage-cross top-left">+</div><div class="stage-cross bottom-right">+</div>
+    <div class="idle-art" id="idleArt" aria-hidden="true"><svg viewBox="0 0 280 200"><g class="block-stack" fill="none" stroke="currentColor" stroke-width="1.3"><path class="slab" d="m35 119 105-56 105 56-105 57zM35 119v10l105 57 105-57v-10M140 176v10"/><path class="slab" d="m52 87 88-47 88 47-88 47zM52 87v12l88 47 88-47V87M140 134v12"/><path class="slab" d="m70 55 70-37 70 37-70 37zM70 55v12l70 37 70-37V55M140 92v12"/><path class="trace" d="m98 55 42-22 42 22-28 15-28-15 14-7m0 72 28-15 28 15m-98 18 28 15 56-30"/></g><g class="art-nodes" fill="currentColor"><circle cx="98" cy="55" r="3"/><circle cx="140" cy="48" r="3"/><circle cx="98" cy="138" r="3"/></g></svg></div>
+    <canvas id="rose" width="420" height="420" aria-label="Rose Four 搜索动画" hidden></canvas>
+    <div class="stage-copy"><span id="stageOverline">一首音乐，无限种排列。</span><strong id="stageTitle">下一件作品，从这里开始</strong><small id="stageSub">导入 NBS，开始探索它的空间。</small></div>
+   </div>
+   <div class="metric-grid"><div><span>音符数量</span><strong id="noteMetric">—</strong></div><div><span>已搜索候选</span><strong id="attemptMetric">—</strong></div><div><span>当前最优主体</span><strong id="bestMetric">—</strong></div><div><span>总用时</span><strong id="timeMetric">00:00</strong></div></div>
+   <div class="lane-list" id="lanes"></div>
+   <div class="status-message" id="statusMessage" role="status" aria-live="polite">选择文件后即可开始转换。</div>
+   <div class="monitor-tabs" role="tablist" aria-label="结果视图"><button class="active" role="tab" aria-selected="true" aria-controls="logPanel" id="logTab">转换记录</button><button role="tab" aria-selected="false" aria-controls="previewPanel" id="previewTab">分层预览</button><span id="liveDot"></span></div>
+   <div id="logPanel" class="log-panel" role="tabpanel" aria-labelledby="logTab"><div class="empty-log">每一次探索，都会留在这里。<small>读取、搜索与导出记录</small></div></div>
+   <div id="previewPanel" class="preview-panel" role="tabpanel" aria-labelledby="previewTab" hidden><div class="preview-empty">转换完成后，在这里逐层查看电路。</div><canvas id="previewCanvas" hidden></canvas><div id="layerTools" hidden><label for="layer">第 <b id="layerValue">0</b> 层</label><input type="range" min="0" max="1" value="0" id="layer"><p id="previewHint"></p><div class="legend"><span>音符盒</span><span>红石</span><span>中继器</span><span>底座</span></div></div></div>
+   <button class="result-link" id="openOutput" hidden><svg><use href="#i-folder"/></svg>打开输出文件夹<svg><use href="#i-arrow"/></svg></button>
+  </aside>
+ </main>
+ <footer class="action-bar"><div class="action-summary"><span class="ready-dot"></span><div><strong id="footerTitle">准备就绪</strong><small id="footerSub">选择音乐，设置将自动保存</small></div></div><div class="action-buttons"><button class="button subtle" id="cancelBtn" hidden>取消</button><button class="button" id="finishBtn" hidden>导出当前最优</button><button class="button primary" id="startBtn" disabled><span>开始转换</span><svg><use href="#i-arrow"/></svg></button></div></footer>
+</div>
+<div class="theme-menu" id="themeMenu" role="menu" aria-label="外观主题" hidden><div class="menu-page" id="themeOptions"><div class="theme-menu-heading">选择一种工作氛围</div><button role="menuitemradio" aria-checked="false" data-theme-choice="light"><span class="theme-sample light-sample"></span><span><strong>纸间</strong><small>中性灰白 · 实体层叠</small></span><svg><use href="#i-check"/></svg></button><button role="menuitemradio" aria-checked="false" data-theme-choice="dark"><span class="theme-sample dark-sample"></span><span><strong>夜航</strong><small>黑灰界面 · 蓝色线条</small></span><svg><use href="#i-check"/></svg></button><button role="menuitemradio" aria-checked="true" data-theme-choice="glass"><span class="theme-sample glass-sample"></span><span><strong>浮光</strong><small>半透明玻璃 · 悬浮工作台</small></span><svg><use href="#i-check"/></svg></button><button id="fontMenuBtn" role="menuitem" aria-haspopup="menu" aria-expanded="false"><span class="font-menu-icon">Aa</span><span><strong>界面字号</strong><small id="fontSummary">标准 · 100%</small></span><svg><use href="#i-chevron"/></svg></button></div><div class="menu-page" id="fontOptions" hidden><button id="fontMenuBack" role="menuitem"><svg><use href="#i-chevron"/></svg><strong>界面字号</strong></button><div class="theme-menu-heading">调整文字大小，自动记住选择</div><button data-font-size="90" role="menuitemradio" aria-checked="false"><span><strong>较小</strong><small>90%</small></span><svg><use href="#i-check"/></svg></button><button data-font-size="100" role="menuitemradio" aria-checked="true"><span><strong>标准</strong><small>100%</small></span><svg><use href="#i-check"/></svg></button><button data-font-size="110" role="menuitemradio" aria-checked="false"><span><strong>稍大</strong><small>110%</small></span><svg><use href="#i-check"/></svg></button><button data-font-size="120" role="menuitemradio" aria-checked="false"><span><strong>大</strong><small>120%</small></span><svg><use href="#i-check"/></svg></button><button data-font-size="130" role="menuitemradio" aria-checked="false"><span><strong>特大</strong><small>130%</small></span><svg><use href="#i-check"/></svg></button></div></div>
+<div class="resize-handles" aria-hidden="true"><div data-edge="left"></div><div data-edge="right"></div><div data-edge="top"></div><div data-edge="bottom"></div><div data-edge="top-left"></div><div data-edge="top-right"></div><div data-edge="bottom-left"></div><div data-edge="bottom-right"></div></div>
+<div class="toast" id="toast" role="status" aria-live="polite"></div>
+<dialog id="renameDialog"><form method="dialog"><div class="dialog-head"><h2>给配置起个名字</h2><button class="icon-button" value="cancel" aria-label="关闭"><svg><use href="#i-close"/></svg></button></div><p>下次选择它，就能载入这一组设置。</p><label for="profileName">配置名称</label><input id="profileName" maxlength="24" required autocomplete="off"><div class="dialog-actions"><button class="button" value="cancel" formnovalidate>取消</button><button class="button primary" id="confirmRename" value="save">保存名称</button></div></form></dialog>
+<dialog id="aboutDialog"><div class="dialog-head"><h2>为旋律留一块空间。</h2><button class="icon-button" id="closeAbout" aria-label="关闭"><svg><use href="#i-close"/></svg></button></div><p>NBS 红石投影转换器 · 2.9.3</p><p>界面与动效参考 Emil Kowalski 的 Design Engineering。搜索动画基于 Paidax01 / Math Curve Loaders 的 Rose Four：r = a cos(4θ)。</p><p class="help">浅色「纸间」：中性灰白、压印与实体层叠。<br>深色「夜航」：黑灰面板、蓝色线条与仪表读数。<br>毛玻璃「浮光」：透光卡片、独立侧栏与悬浮操作条。<br>首次使用默认毛玻璃，之后记住上次主题。<br>在右上角可切换主题。动态效果跟随系统的减少动画偏好。</p><p class="help">原版音符盒不支持独立力度；ENB 模式会保存 NBS 音符力度 × 音轨音量，需要配套模组。输出目录内的说明包含各模式接线和使用要求。</p></dialog>
+<div id="boot" class="boot"><canvas id="bootRose" width="200" height="200"></canvas><strong>正在打开工作台</strong><small id="bootMessage">加载本地设置…</small></div>
+<script src="rose-four.js"></script><script src="studio.js"></script>
+</body></html>

@@ -1,0 +1,51 @@
+'use strict';
+const {parse}=require('./nbs.cjs');
+// Inspect source timestamps, never infer tempo or pitch from a filename.
+function plan(raw,options={}){
+ const opt={...options},automatic=opt.adaptive===true,messages=[];
+ if(automatic)Object.assign(opt,{speed:1,transpose:0,pitch:'strict',timing:'auto',soundEngine:'auto',backend:'cpu',heavyCore:false,externalInputs:true,autoStartWiring:true,workers:Math.max(1,Math.min(16,require('node:os').availableParallelism())),maxTracks:8,maxX:80,maxZ:80,maxY:48,maxAspect:1.5,maxSpatialAspect:2,maxListeningRadius:40});
+ const notes=raw.notes.filter(n=>n.velocity!==0&&raw.layers[n.layer]?.volume!==0);
+ if(!notes.length)throw Error('文件没有可发声的音符。');
+ const speed=Number(opt.speed??1),transpose=Number(opt.transpose??0),counts=new Map();
+ let exact10=true,exact20=true,low=Infinity,high=-Infinity,velocity=false;
+ for(const n of notes){
+  const seconds=n.tick/raw.tempo/speed,key=n.key+n.pitch/100+transpose;
+  exact10&&=Math.abs(seconds*10-Math.round(seconds*10))<1e-7;
+  exact20&&=Math.abs(seconds*20-Math.round(seconds*20))<1e-7;
+  low=Math.min(low,key);high=Math.max(high,key);
+  velocity||=(n.velocity??100)!==100||(raw.layers[n.layer]?.volume??100)!==100;
+  counts.set(n.tick,(counts.get(n.tick)||0)+1);
+ }
+ let peak=0;for(const count of counts.values())peak=Math.max(peak,count);
+ const duration=notes.at(-1).tick/raw.tempo/speed;
+ if(automatic){
+  opt.objective=notes.length>20000||peak>136?'toxic':'volume';
+  opt.seconds=notes.length<2000?30:notes.length<10000?60:180;
+  if(notes.length<128){opt.maxSpatialAspect=0;opt.maxAspect=0;} // Tiny phrases need not be inflated to a cube.
+  messages.push(opt.objective==='toxic'?`密度较高（最多 ${peak} 音同时发声），自动使用毒曲：宽高 ≤100，长度不限，含命令方块跟随。`:`自动体积优先：CPU ${opt.workers} 线程，搜索预算 ${opt.seconds} 秒，有可用方案后自动导出。`);
+  require('./versions.cjs').get(opt.target);
+ }
+ if(opt.timing==='auto'){
+  opt.timeResolution=Math.abs(raw.tempo*speed-20)<1e-7||!exact10?20:10;
+  if(!exact20)throw Error('此曲不能精确落在游戏刻上。自动模式不会改变节奏；请切到手动配置，在音乐时序中选择“20t 最近游戏刻（±25 ms）”。');
+  opt.timing='strict';
+  messages.push(`文件速度 ${raw.tempo} tick/s → ${opt.timeResolution===20?'20t 严格档（0.05 秒）':'普通严格档（0.1 秒）'}；保持原曲速度${speed===1?'':` × ${speed}`}。`);
+ }
+ if(Number(opt.timeResolution)===20&&(opt.objective==='materials'))throw Error('精确播放此曲需要 20t；请选择体积优先或毒曲模式。极限省材暂不支持 20t。');
+ if(opt.soundEngine==='auto'){
+  opt.soundEngine=low<33||high>57||velocity?'extended':'vanilla';
+  if(opt.soundEngine==='extended')require('./versions.cjs').requireEnb(opt.target);
+  messages.push(opt.soundEngine==='extended'?'使用 ENB 保留音高与音符力度；游戏必须安装配套 ENB 模组，粘贴保留方块实体 NBT。':'音域与力度适合原版音符盒，无需音域模组。');
+ }
+ if(automatic){
+  messages.push('普通布线、沙子独立音轨和层间压缩共同搜索；符合条件时自动检查乐句复用。自动连接外部启动线。');
+  if(opt.objective==='volume')messages.push(notes.length<128?'短片段自动取消长宽与三维比例限制，避免凑形状；主体上限 80 × 80 × 48，听音半径 40 格。':'主体上限 80 × 80 × 48；长宽差 ≤50%，听音半径 40 格。无解时可在手动配置中放宽限制。');
+  if(velocity&&opt.soundEngine!=='extended')messages.push('当前音域方案不保留逐音符力度。');
+ }
+ // Normalize once for early validation (microtones/custom instruments included).
+ const song=require('./normalize.cjs').normalize(raw,opt);
+ return {options:opt,summary:{tempo:raw.tempo,notes:notes.length,onsets:counts.size,peak,durationSeconds:duration,keyRange:[low,high],timeResolution:Number(opt.timeResolution??10),timing:opt.timing||'strict',soundEngine:opt.soundEngine||'vanilla',objective:opt.objective||'volume',seconds:opt.seconds,messages,warnings:song.warnings}};
+}
+function inspect(options){return plan(parse(options.input,{maxNotes:1000000}),options);}
+if(require.main===module){let input='';process.stdin.setEncoding('utf8');process.stdin.on('data',s=>input+=s);process.stdin.on('end',()=>{try{const r=inspect(JSON.parse(input));process.stdout.write(JSON.stringify({ok:true,...r}));}catch(e){process.stdout.write(JSON.stringify({ok:false,error:e.message}));}});}
+module.exports={plan,inspect};

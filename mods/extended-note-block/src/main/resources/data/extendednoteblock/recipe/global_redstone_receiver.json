@@ -1,0 +1,17 @@
+{
+  "type": "minecraft:crafting_shaped",
+  "pattern": [
+    "SSS",
+    "RLR",
+    "SSS"
+  ],
+  "key": {
+    "S": "minecraft:stone",
+    "R": "minecraft:redstone",
+    "L": "minecraft:redstone_lamp"
+  },
+  "result": {
+    "count": 1,
+    "id": "extendednoteblock:global_redstone_receiver"
+  }
+}

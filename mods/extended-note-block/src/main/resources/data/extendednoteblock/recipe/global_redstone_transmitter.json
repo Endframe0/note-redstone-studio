@@ -1,0 +1,17 @@
+{
+  "type": "minecraft:crafting_shaped",
+  "pattern": [
+    "SSS",
+    "RBR",
+    "SSS"
+  ],
+  "key": {
+    "S": "minecraft:stone",
+    "R": "minecraft:redstone",
+    "B": "minecraft:redstone_block"
+  },
+  "result": {
+    "count": 1,
+    "id": "extendednoteblock:global_redstone_transmitter"
+  }
+}

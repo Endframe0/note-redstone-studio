@@ -1,0 +1,26 @@
+{
+  "schemaVersion": 1,
+  "id": "enb_nbs_compat",
+  "name": "ENB NBS Compatibility",
+  "version": "1.0.0+mc1.21.1",
+  "description": "NBS vanilla timbre, MIDI pitch and velocity bridge for unmodified upstream ENB.",
+  "license": "MIT",
+  "environment": "*",
+  "entrypoints": {
+    "main": [
+      "local.nbs.compat.Compat"
+    ],
+    "client": [
+      "local.nbs.compat.ClientCompat"
+    ]
+  },
+  "mixins": [
+    "enb-nbs-compat.mixins.json"
+  ],
+  "depends": {
+    "minecraft": "1.21.1",
+    "fabricloader": ">=0.16.14",
+    "fabric-api": "*",
+    "extendednoteblock": ">=1.9.1"
+  }
+}
