@@ -280,8 +280,9 @@ public class ModMessages {
     }
 
     public static void sendStopSoundToClients(ServerLevel world, BlockPos pos, UUID soundId) {
+        // Recipients may have left the chunk/dimension since the note started.
         var payload = new ModPayloads.StopSoundPayload(soundId);
-        for (ServerPlayer player : PlayerLookup.tracking(world, pos)) {
+        for (ServerPlayer player : PlayerLookup.all(world.getServer())) {
             if (ServerPlayNetworking.canSend(player, payload.type())) ServerPlayNetworking.send(player, payload);
         }
     }

@@ -46,7 +46,7 @@ python tests/midi-readback.py
 使用 JDK 25，在该目录运行，例如：
 
 ```powershell
-.\gradlew.bat '-PmcVersion=26.3' '-Pmod_version=1.9.1+mc26.3-port.1' build
+.\gradlew.bat '-PmcVersion=26.3' '-Pmod_version=1.9.1+mc26.3-port.2' build
 ```
 
 将两个参数中的版本一起换为 26.1、26.1.1、26.1.2、26.2 或 26.3。配套主项目源码中的构建适配用于这些版本；旧的上游版本目录作为来源保留，不是推荐构建入口。

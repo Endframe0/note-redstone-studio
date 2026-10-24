@@ -1,15 +1,17 @@
 {
-	"required": true,
-	"package": "com.atemukesu.extendednoteblock.mixin.client",
-	"compatibilityLevel": "JAVA_21",
-	"client": [
-		"OptionsScreenMixin",
-		"MinecraftClientMixin",
-		"SoundEventMixin",
-		"SoundSystemMixin",
-		"CommandBlockScreenMixin"
-	],
-	"injectors": {
-		"defaultRequire": 1
-	}
+  "required": true,
+  "package": "com.atemukesu.extendednoteblock.mixin.client",
+  "compatibilityLevel": "JAVA_21",
+  "client": [
+    "OptionsScreenMixin",
+    "MinecraftClientMixin",
+    "SoundEventMixin",
+    "SoundSystemMixin",
+    "CommandBlockScreenMixin",
+    "SustainBufferMixin",
+    "SustainLibraryMixin"
+  ],
+  "injectors": {
+    "defaultRequire": 1
+  }
 }

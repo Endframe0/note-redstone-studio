@@ -6,7 +6,7 @@
 
 从一份 NBS 或 MIDI，到一台可以在 Minecraft 中搭建的红石音乐机。
 
-[![Release](https://img.shields.io/badge/release-v2.11.0-647db5?style=flat-square)](https://github.com/Endframe0/note-redstone-studio/releases/latest) ![Platform](https://img.shields.io/badge/Windows-10%20%2F%2011-687ca5?style=flat-square) ![Minecraft](https://img.shields.io/badge/Java-1.20%20%E2%80%94%2026.3-7c80ba?style=flat-square) [![License](https://img.shields.io/badge/License-AGPL--3.0--or--later-728695?style=flat-square)](LICENSE)
+[![Release](https://img.shields.io/badge/release-v2.11.1-647db5?style=flat-square)](https://github.com/Endframe0/note-redstone-studio/releases/latest) ![Platform](https://img.shields.io/badge/Windows-10%20%2F%2011-687ca5?style=flat-square) ![Minecraft](https://img.shields.io/badge/Java-1.20%20%E2%80%94%2026.3-7c80ba?style=flat-square) [![License](https://img.shields.io/badge/License-AGPL--3.0--or--later-728695?style=flat-square)](LICENSE)
 
 **[下载 Windows 便携版](https://github.com/Endframe0/note-redstone-studio/releases/latest)** · [开始使用](#开始使用) · [版本兼容](docs/compatibility.md) · [作者致谢](#作者致谢)
 
@@ -37,7 +37,7 @@
 
 ### 01 · 下载并打开
 
-在 [Releases](https://github.com/Endframe0/note-redstone-studio/releases/latest) 下载 `Note-Redstone-Studio-2.11.0-Windows-x64.zip`，**完整解压**后运行 `音符工坊2.11.0.exe`。不要只取出 EXE。
+在 [Releases](https://github.com/Endframe0/note-redstone-studio/releases/latest) 下载 `Note-Redstone-Studio-2.11.1-Windows-x64.zip`，**完整解压**后运行 `音符工坊2.11.1.exe`。不要只取出 EXE。
 
 - Windows 10 / 11，64 位；便携版无需另外安装 Python 或 Node.js。
 - 需要 [Microsoft Edge WebView2 Runtime](https://developer.microsoft.com/microsoft-edge/webview2/)。多数 Windows 电脑已有；缺少时安装 Evergreen Runtime。

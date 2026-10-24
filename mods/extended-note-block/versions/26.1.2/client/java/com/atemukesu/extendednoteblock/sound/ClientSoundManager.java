@@ -43,7 +43,7 @@ public class ClientSoundManager {
         if (sample == null) return;
         StoppablePositionalSoundInstance instance = new StoppablePositionalSoundInstance(
                 SoundEvent.createVariableRangeEvent(sample.id), SoundSource.RECORDS,
-                Math.max(initialVolume, MIN_ALIVE_VOLUME), sample.pitch, pos);
+                Math.max(initialVolume, MIN_ALIVE_VOLUME), sample.pitch, pos, !sample.oneShot);
         if (!sample.oneShot) PLAYING_SOUNDS.put(soundId, instance);
         Minecraft.getInstance().getSoundManager().play(instance);
     }
@@ -68,7 +68,7 @@ public class ClientSoundManager {
         if (sample == null) return;
         StoppablePositionalSoundInstance sound = new StoppablePositionalSoundInstance(
                 SoundEvent.createVariableRangeEvent(sample.id), SoundSource.RECORDS,
-                Math.max(initialVol, MIN_ALIVE_VOLUME), sample.pitch * initialPitchMul, pos);
+                Math.max(initialVol, MIN_ALIVE_VOLUME), sample.pitch * initialPitchMul, pos, !sample.oneShot);
         sound.setPosition(x, y, z);
         sound.setBasePitch(sample.pitch);
         if (!sample.oneShot) PLAYING_SOUNDS.put(soundId, sound);

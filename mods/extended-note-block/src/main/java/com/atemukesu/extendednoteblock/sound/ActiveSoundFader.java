@@ -26,6 +26,7 @@ public class ActiveSoundFader {
     private final int sustainTicks;
     private final int fadeInTicks;
     private final int fadeOutTicks;
+    private final long startedGameTick;
 
     // ============== Advanced Features v1.4.0 ==============
     private List<CurvePoint> pitchBendPoints;
@@ -38,9 +39,7 @@ public class ActiveSoundFader {
 
     // 用于处理由外部事件（如红石信号关闭）触发的强制淡出
     private boolean isFadingOutForced = false;
-    @SuppressWarnings("unused")
     private int forcedFadeOutStartTick = -1;
-    @SuppressWarnings("unused")
     private float volumeOnForcedFadeOut = 1.0f;
 
     public ActiveSoundFader(ServerLevel world, BlockPos pos, UUID soundId, int velocity,
@@ -49,9 +48,11 @@ public class ActiveSoundFader {
         this.pos = pos;
         this.soundId = soundId;
         this.originalVelocity = velocity;
-        this.sustainTicks = sustainTicks;
-        this.fadeInTicks = fadeInTicks;
-        this.fadeOutTicks = fadeOutTicks;
+        this.sustainTicks = Math.max(1, sustainTicks);
+        this.fadeInTicks = Math.max(0, fadeInTicks);
+        this.fadeOutTicks = Math.max(0, fadeOutTicks);
+        this.startedGameTick = world == null ? 0 : world.getGameTime();
+        this.currentAbsoluteVolume = fadeInTicks > 0 ? 0 : velocity / 127.0f;
     }
 
     // ============== Advanced Features Setters v1.4.0 ==============
@@ -75,7 +76,10 @@ public class ActiveSoundFader {
     public boolean tick() {
         if (isFinished)
             return true;
-        if (currentTick >= sustainTicks) {
+        currentTick = world == null ? currentTick + 1
+                : (int)Math.clamp(world.getGameTime() - startedGameTick, 0L, Integer.MAX_VALUE);
+        if (currentTick >= sustainTicks || (isFadingOutForced
+                && currentTick - forcedFadeOutStartTick >= fadeOutTicks)) {
             isFinished = true;
             return true;
         }
@@ -86,12 +90,17 @@ public class ActiveSoundFader {
 
         // 计算当前状态
         SoundState state = calculateStateAt(progress);
+        float volume = state.volume;
+        if (isFadingOutForced) {
+            float remaining = 1.0f - (float)(currentTick - forcedFadeOutStartTick) / fadeOutTicks;
+            volume = Math.min(volume, volumeOnForcedFadeOut * Math.max(0, remaining));
+        }
+        currentAbsoluteVolume = volume;
 
         // 发送更新
-        ModMessages.sendAdvancedUpdateToClients(world, pos, soundId, state.volume, state.pitch, state.x, state.y,
+        ModMessages.sendAdvancedUpdateToClients(world, pos, soundId, volume, state.pitch, state.x, state.y,
                 state.z);
 
-        currentTick++;
         return false;
     }
 
@@ -147,17 +156,17 @@ public class ActiveSoundFader {
             // [兼容旧逻辑] 淡入淡出计算...
             // 确保没有 volumePoints 时逻辑正确
             float volumeMultiplier = 1.0f;
-            if (fadeInTicks > 0 && (progress * sustainTicks) <= fadeInTicks) {
-                float fadeInProgress = Math.min(1.0f, (float) (progress * sustainTicks) / (float) fadeInTicks);
+            float age = progress * Math.max(0, sustainTicks - 1);
+            if (fadeInTicks > 0 && age <= fadeInTicks) {
+                float fadeInProgress = Math.min(1.0f, age / fadeInTicks);
                 volumeMultiplier = Math.min(volumeMultiplier, fadeInProgress);
             }
 
             // 计算淡出效果
             if (fadeOutTicks > 0 && sustainTicks > 0) {
-                int fadeOutStartTick = sustainTicks - fadeOutTicks;
-                if ((int) (progress * sustainTicks) > fadeOutStartTick) {
-                    int timeIntoFadeOut = (int) (progress * sustainTicks) - fadeOutStartTick;
-                    float fadeOutProgress = 1.0f - ((float) timeIntoFadeOut / (float) (fadeOutTicks + 1));
+                float fadeOutStartTick = sustainTicks - fadeOutTicks;
+                if (age >= fadeOutStartTick) {
+                    float fadeOutProgress = Math.max(0, (sustainTicks - age) / fadeOutTicks);
                     volumeMultiplier = Math.min(volumeMultiplier, fadeOutProgress);
                 }
             }
@@ -226,7 +235,8 @@ public class ActiveSoundFader {
     public void startFadeOut() {
         if (!isFadingOutForced) {
             isFadingOutForced = true;
-            forcedFadeOutStartTick = currentTick;
+            forcedFadeOutStartTick = world == null ? currentTick
+                    : (int)Math.clamp(world.getGameTime() - startedGameTick, 0L, Integer.MAX_VALUE);
             volumeOnForcedFadeOut = this.currentAbsoluteVolume;
 
             if (fadeOutTicks <= 0) {

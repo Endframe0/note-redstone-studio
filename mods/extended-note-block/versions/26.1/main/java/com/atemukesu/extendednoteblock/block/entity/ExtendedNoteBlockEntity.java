@@ -609,6 +609,14 @@ public class ExtendedNoteBlockEntity extends BlockEntity implements ExtendedMenu
      * @param delay    新的延迟时间 (0-5000)。
      */
     public void updateValues(int note, int velocity, int sustain, int delay, int fadeIn, int fadeOut) {
+        // Editing an envelope opts imported NBS one-shots into timed playback.
+        // Pitch/velocity-only edits must preserve their natural one-shot lifetime.
+        if (this.sustainTime != Math.clamp(sustain, 0, 400)
+                || this.fadeInTime != Math.clamp(fadeIn, 0, 5000)
+                || this.fadeOutTime != Math.clamp(fadeOut, 0, 5000)) {
+            this.oneShot = false;
+            this.holdUntilRelease = false;
+        }
         this.note = Math.max(0, Math.min(127, note));
         this.velocity = Math.max(0, Math.min(127, velocity));
         this.sustainTime = Math.max(0, Math.min(400, sustain));

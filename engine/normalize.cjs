@@ -35,7 +35,7 @@ function normalize(source,opt={}){
  if(pitchChanged)warnings.push(`已按选项折叠 / 取整 ${pitchChanged} 个音高。`);
  if(muted)warnings.push(`省略 ${muted} 个音量为 0 的静音音符。`);
  if(speed!==1)warnings.push(`演奏速度为原曲 ${speed} 倍。`);
- if(midiPlan)warnings.push(...require('./midi-timing.cjs').messages(midiPlan),extended?'MIDI 持续时间由 Note Off / 延音踏板确定，淡入淡出为导入设置（不是 MIDI 自带时值字段）。ENB 可提前停止和改变音量，但不循环延长原版短采样；长音可能在设定结束前自然衰减。':'MIDI 使用原版音符盒时仅还原乐器、音高与起音；不保留 Note Off 时长、延音踏板时长、淡入淡出或独立力度，声音按原版采样自然播放。');
+ if(midiPlan)warnings.push(...require('./midi-timing.cjs').messages(midiPlan),extended?'MIDI 持续时间由 Note Off / 延音踏板确定，淡入淡出为导入设置（不是 MIDI 自带时值字段）。26.x ENB port.2 支持采样循环延音和包络；请更新客户端与服务端模组。短采样延长后的音色可能不同于真实乐器长音。':'MIDI 使用原版音符盒时仅还原乐器、音高与起音；不保留 Note Off 时长、延音踏板时长、淡入淡出或独立力度，声音按原版采样自然播放。');
  const ticks=[...gm.keys()];let prev=0;if(ticks[0]>0)gm.set(0,[]);
  for(const t of ticks){while(t-prev>8){prev+=8;gm.set(prev,[])}prev=t}
  return{...source,midiConversion:midiPlan?{...midiPlan,envelope:{preserved:extended,mode:opt.midiEnvelope||'custom',fadeInMs:Number(opt.midiFadeInMs??0),fadeOutMs:Number(opt.midiFadeOutMs??50)},mappingSource:source.midi.mappingSource,mappingProfile:source.midi.mappingProfile,copperMappedNotes:source.midi.copperMappedNotes,sourceDurationSeconds:source.midi.durationSeconds,durationSeconds:notes.reduce((m,n)=>Math.max(m,(n.tick*2+(n.enbSustainTime??0))/20),0)}:null,tempo:10,notes,events:[...gm].sort((a,b)=>a[0]-b[0]).map(([tick,notes])=>({tick,notes})),warnings,timingErrorMs,pitchChanged,muted,merged,speed,transpose,denseChordCount:denseChords.length};

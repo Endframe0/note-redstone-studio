@@ -14,7 +14,7 @@ from profiles import settings_path, read_settings, write_settings
 from desktop_options import (BASE, SUPPORTS, BUDGETS, SOUND_ENGINES, SOUND_HINTS,
     HORIZONTAL_OPTIONS, SPACE_OPTIONS, RADIUS_OPTIONS, make_options, VERSIONS)
 
-VERSION = '2.11.0'
+VERSION = '2.11.1'
 DEFAULTS = dict(adaptive=True, objective='体积优先', target='26.1.2', budget='持续优化 · 手动导出',
     support='圆石', speed='1', pitch='严格保留', timing='严格保留', transpose='0',
     auto_sound='纯原版音符盒',auto_pitch='严格保留',

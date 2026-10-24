@@ -47,6 +47,11 @@ public class StoppablePositionalSoundInstance implements TickableSoundInstance {
      */
     public StoppablePositionalSoundInstance(SoundEvent soundEvent, SoundSource category, float volume, float pitch,
                                             BlockPos pos) {
+        this(soundEvent, category, volume, pitch, pos, false);
+    }
+
+    public StoppablePositionalSoundInstance(SoundEvent soundEvent, SoundSource category, float volume, float pitch,
+                                            BlockPos pos, boolean sustain) {
         this.soundEvent = soundEvent;
         this.category = category;
         this.volume = volume;
@@ -60,7 +65,7 @@ public class StoppablePositionalSoundInstance implements TickableSoundInstance {
         this.x = pos.getX() + 0.5;
         this.y = pos.getY() + 0.5;
         this.z = pos.getZ() + 0.5;
-        this.repeat = false;
+        this.repeat = sustain;
         this.repeatDelay = 0;
     }
 
