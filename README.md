@@ -18,6 +18,10 @@
 
 初次使用可以交给自动配置：选歌、选游戏版本、开始转换。熟悉之后，再打开手动配置调整尺寸、材料、音域和搜索方式。
 
+![《七里香》全音域红石音乐机，Minecraft 海洋地图实录](docs/images/qilixiang-gameplay.png)
+
+<p align="center"><b>《七里香》</b> · 音符数 <b>7,714</b> · 曲目长度 <b>4 分 34 秒</b><br><sub>全音域演示使用 Extended Note Block；主体尺寸 40 × 35 × 39 格（长 × 宽 × 高，不计外部启动电路）。</sub></p>
+
 ![毛玻璃「浮光」工作台，2.10.1 实际界面](docs/images/workbench.png)
 
 <sub>截图使用本地测试文件演示操作；发布包不附带这些 NBS。</sub>
