@@ -14,7 +14,7 @@ from profiles import settings_path, read_settings, write_settings
 from desktop_options import (BASE, SUPPORTS, BUDGETS, SOUND_ENGINES, SOUND_HINTS,
     HORIZONTAL_OPTIONS, SPACE_OPTIONS, RADIUS_OPTIONS, make_options, VERSIONS)
 
-VERSION = '2.10.0'
+VERSION = '2.10.1'
 DEFAULTS = dict(adaptive=True, objective='体积优先', target='26.1.2', budget='持续优化 · 手动导出',
     support='圆石', speed='1', pitch='严格保留', timing='严格保留', transpose='0',
     sound_engine='原版音符盒', threads=str(min(os.cpu_count() or 1, 32)),
@@ -368,7 +368,7 @@ def main():
     from desktop_window import app_identity,configure_shell
     app_identity()
     api=DesktopAPI()
-    window=webview.create_window(f'NBS 红石投影转换器 {VERSION}',str(BASE/'desktop/index.html'),js_api=api,
+    window=webview.create_window(f'音符工坊 · Note Redstone Studio {VERSION}',str(BASE/'desktop/index.html'),js_api=api,
         width=1320,height=920,min_size=(900,680),background_color='#e5edf6',text_select=True,
         frameless=True,easy_drag=False,transparent=True)
     api._window=window

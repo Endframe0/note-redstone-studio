@@ -1,24 +1,24 @@
 <div align="center">
 
-<img src="docs/images/hero.svg" alt="红石工坊 — 把音乐，折叠成红石。" width="100%">
+<img src="docs/images/hero.svg" alt="音符工坊 — 把音乐，折叠成红石。" width="100%">
 
-**NBS 红石投影转换器 · Redstone Studio**
+**音符工坊 · Note Redstone Studio**
 
 从一份 NBS，到一台可以在 Minecraft 中搭建的红石音乐机。
 
-[![Release](https://img.shields.io/badge/release-v2.10.0-647db5?style=flat-square)](https://github.com/Endframe0/nbs-redstone-studio/releases/latest) ![Platform](https://img.shields.io/badge/Windows-10%20%2F%2011-687ca5?style=flat-square) ![Minecraft](https://img.shields.io/badge/Java-1.20%20%E2%80%94%2026.3-7c80ba?style=flat-square) [![License](https://img.shields.io/badge/License-AGPL--3.0--or--later-728695?style=flat-square)](LICENSE)
+[![Release](https://img.shields.io/badge/release-v2.10.1-647db5?style=flat-square)](https://github.com/Endframe0/note-redstone-studio/releases/latest) ![Platform](https://img.shields.io/badge/Windows-10%20%2F%2011-687ca5?style=flat-square) ![Minecraft](https://img.shields.io/badge/Java-1.20%20%E2%80%94%2026.3-7c80ba?style=flat-square) [![License](https://img.shields.io/badge/License-AGPL--3.0--or--later-728695?style=flat-square)](LICENSE)
 
-**[下载 Windows 便携版](https://github.com/Endframe0/nbs-redstone-studio/releases/latest)** · [开始使用](#开始使用) · [版本兼容](docs/compatibility.md) · [作者致谢](#作者致谢)
+**[下载 Windows 便携版](https://github.com/Endframe0/note-redstone-studio/releases/latest)** · [开始使用](#开始使用) · [版本兼容](docs/compatibility.md) · [作者致谢](#作者致谢)
 
 </div>
 
 ## 把音乐变成可以搭建的作品
 
-红石工坊读取 `.nbs` 音乐，分析音高、力度、速度和重复片段，寻找更合适的电路排布，导出 **Litematica 投影、材料清单和启动说明**。在游戏里，真正发声的是红石驱动的音符盒。
+音符工坊读取 `.nbs` 音乐，分析音高、力度、速度和重复片段，寻找更合适的电路排布，导出 **Litematica 投影、材料清单和启动说明**。在游戏里，真正发声的是红石驱动的音符盒。
 
 初次使用可以交给自动配置：选歌、选游戏版本、开始转换。熟悉之后，再打开手动配置调整尺寸、材料、音域和搜索方式。
 
-![毛玻璃「浮光」工作台，2.10.0 实际界面](docs/images/workbench.png)
+![毛玻璃「浮光」工作台，2.10.1 实际界面](docs/images/workbench.png)
 
 <sub>截图使用本地测试文件演示操作；发布包不附带这些 NBS。</sub>
 
@@ -33,7 +33,7 @@
 
 ### 01 · 下载并打开
 
-在 [Releases](https://github.com/Endframe0/nbs-redstone-studio/releases/latest) 下载 `NBS-Redstone-Studio-2.10.0-Windows-x64.zip`，**完整解压**后运行 `NBS红石投影转换器2.10.0.exe`。不要只取出 EXE。
+在 [Releases](https://github.com/Endframe0/note-redstone-studio/releases/latest) 下载 `Note-Redstone-Studio-2.10.1-Windows-x64.zip`，**完整解压**后运行 `音符工坊2.10.1.exe`。不要只取出 EXE。
 
 - Windows 10 / 11，64 位；便携版无需另外安装 Python 或 Node.js。
 - 需要 [Microsoft Edge WebView2 Runtime](https://developer.microsoft.com/microsoft-edge/webview2/)。多数 Windows 电脑已有；缺少时安装 Evergreen Runtime。

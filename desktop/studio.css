@@ -127,3 +127,6 @@ html{font-size:13px}
 .quick-target label[for=quickRange]{grid-column:1;grid-row:1}.quick-target label[for=quickTarget]{grid-column:2;grid-row:1}
 #quickRange{grid-column:1;grid-row:2}#quickTarget{grid-column:2;grid-row:2}.quick-target select{width:100%}
 #versionHint{grid-column:1/-1;font-size:.8rem;line-height:1.7;color:var(--muted)}
+
+/* Keep the full English product name legible inside the compact sidebar. */
+.brand small,[data-theme=glass] .brand small{font-family:"Segoe UI",sans-serif;font-size:8.5px;letter-spacing:0;line-height:1.45;white-space:normal;max-width:112px}
