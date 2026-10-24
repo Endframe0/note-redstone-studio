@@ -42,6 +42,15 @@ const blocks=JSON.parse(fs.readFileSync(path.join(report.folder,'扩展音符盒
 const vanillaReport=require('../engine/cli.cjs').convert({input,output:dir,target:'1.20',objective:'toxic',soundEngine:'vanilla'},()=>{});
 assert.equal(vanillaReport.notes,5);assert(!vanillaReport.extendedNoteblock);assert.equal(vanillaReport.sourceType,'midi');
 assert.equal(vanillaReport.options.soundEngine,'vanilla');
-fs.writeFileSync(path.join(dir,'verification.json'),JSON.stringify({pass:true,parserNotes:raw.notes.length,tempo119:f,schematic:report.schematic,blocks,vanillaSchematic:vanillaReport.schematic},null,2));
+const brassEvents=[tempo(0,500000)];for(let i=0;i<8;i++)brassEvents.push([i*480,192,56+i],[i*480,144,60,100],[i*480+240,128,60,0]);
+const brassBuffer=smf([brassEvents]),brass=parse(brassBuffer),mapped=require('../engine/midi-mapping.cjs').apply(brass,{target:'26.1.2'});
+assert.deepEqual(mapped.notes.map(n=>n.instrument),[16,18,19,17,17,16,16,17]);
+assert.deepEqual(mapped.notes.map(n=>n.key),[39,51,51,39,39,39,39,39]);
+assert.deepEqual(require('../engine/midi-mapping.cjs').apply(mapped,{target:'1.21.11'}).notes.map(n=>[n.instrument,n.key]),brass.notes.map(n=>[n.instrument,n.key]));
+for(const target of ['26.1','26.1.1','26.1.2','26.2','26.3'])assert.equal(normalize(brass,plan(brass,{target,adaptive:true,soundEngine:'vanilla'}).options).midiConversion.copperMappedNotes,8);
+const brassInput=path.join(dir,'copper-brass.mid');fs.writeFileSync(brassInput,brassBuffer);
+const brassReports=['vanilla','extended'].map(soundEngine=>require('../engine/cli.cjs').convert({input:brassInput,output:dir,target:'26.1.2',objective:'toxic',soundEngine},()=>{}));
+assert(brassReports.every(r=>r.notes===8&&r.midi.mappingProfile==='minecraft26-copper-v1'));
+fs.writeFileSync(path.join(dir,'verification.json'),JSON.stringify({pass:true,parserNotes:raw.notes.length,tempo119:f,schematic:report.schematic,blocks,vanillaSchematic:vanillaReport.schematic,brassSchematics:brassReports.map(r=>r.schematic)},null,2));
 console.log('PASS MIDI: parsing, running status, overlap, pedal, tempo map, 10t/20t alignment, no drift, envelope identity and real export.');
 module.exports={smf,tempo};

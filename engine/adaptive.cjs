@@ -2,6 +2,7 @@
 const {parse}=require('./music-source.cjs');
 // Inspect source timestamps, never infer tempo or pitch from a filename.
 function plan(raw,options={}){
+ raw=require('./midi-mapping.cjs').apply(raw,options);
  const opt={...options},automatic=opt.adaptive===true,messages=[];
  if(automatic)Object.assign(opt,{speed:1,transpose:0,pitch:opt.pitch||'strict',timing:'auto',soundEngine:opt.soundEngine||'vanilla',backend:'cpu',heavyCore:false,externalInputs:true,autoStartWiring:true,workers:Math.max(1,Math.min(16,require('node:os').availableParallelism())),maxTracks:8,maxX:80,maxZ:80,maxY:48,maxAspect:1.5,maxSpatialAspect:2,maxListeningRadius:40});
  if(opt.soundEngine==='auto')throw Error('请明确选择纯原版音符盒或 ENB 模组版；程序不再自动切换。');

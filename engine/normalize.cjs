@@ -2,6 +2,7 @@
 const names=['harp','bass','basedrum','snare','hat','guitar','flute','bell','chime','xylophone','iron_xylophone','cow_bell','didgeridoo','bit','banjo','pling','trumpet','trumpet_exposed','trumpet_weathered','trumpet_oxidized'];
 const bases=['dirt','oak_planks','stone','sand','glass','white_wool','clay','gold_block','packed_ice','bone_block','iron_block','soul_sand','pumpkin','emerald_block','hay_block','glowstone','waxed_copper_block','waxed_exposed_copper','waxed_weathered_copper','waxed_oxidized_copper'];
 function normalize(source,opt={}){
+ source=require('./midi-mapping.cjs').apply(source,opt);
  const quinn=require('./quinn.cjs').enabled(opt),extended=opt.soundEngine==='extended',low=extended?-21:quinn?9:33,high=extended?106:quinn?105:57;
  const warnings=[...require('./versions.cjs').warnings(opt.target,opt),...(source.compatibilityWarnings||[]),extended&&source.sourceType==='midi'?'ENB 力度读取 MIDI 起音力度、CC7 音量与 CC11 表情；不还原声像。':extended?'ENB 力度按 NBS 音符力度 × 音轨音量换算到 0–127；声像未还原，实际声像随听者位置变化。':'原版音符盒不能独立还原音符力度与声像；布局保留音高、乐器和起音，实际声像随听者位置变化。'];
  const speed=Number(opt.speed??1),transpose=Number(opt.transpose??0);
@@ -37,6 +38,6 @@ function normalize(source,opt={}){
  if(midiPlan)warnings.push(...require('./midi-timing.cjs').messages(midiPlan),extended?'MIDI 持续时间由 Note Off / 延音踏板确定，淡入淡出为导入设置（不是 MIDI 自带时值字段）。ENB 可提前停止和改变音量，但不循环延长原版短采样；长音可能在设定结束前自然衰减。':'MIDI 使用原版音符盒时仅还原乐器、音高与起音；不保留 Note Off 时长、延音踏板时长、淡入淡出或独立力度，声音按原版采样自然播放。');
  const ticks=[...gm.keys()];let prev=0;if(ticks[0]>0)gm.set(0,[]);
  for(const t of ticks){while(t-prev>8){prev+=8;gm.set(prev,[])}prev=t}
- return{...source,midiConversion:midiPlan?{...midiPlan,envelope:{preserved:extended,mode:opt.midiEnvelope||'custom',fadeInMs:Number(opt.midiFadeInMs??0),fadeOutMs:Number(opt.midiFadeOutMs??50)},mappingSource:source.midi.mappingSource,sourceDurationSeconds:source.midi.durationSeconds,durationSeconds:notes.reduce((m,n)=>Math.max(m,(n.tick*2+(n.enbSustainTime??0))/20),0)}:null,tempo:10,notes,events:[...gm].sort((a,b)=>a[0]-b[0]).map(([tick,notes])=>({tick,notes})),warnings,timingErrorMs,pitchChanged,muted,merged,speed,transpose,denseChordCount:denseChords.length};
+ return{...source,midiConversion:midiPlan?{...midiPlan,envelope:{preserved:extended,mode:opt.midiEnvelope||'custom',fadeInMs:Number(opt.midiFadeInMs??0),fadeOutMs:Number(opt.midiFadeOutMs??50)},mappingSource:source.midi.mappingSource,mappingProfile:source.midi.mappingProfile,copperMappedNotes:source.midi.copperMappedNotes,sourceDurationSeconds:source.midi.durationSeconds,durationSeconds:notes.reduce((m,n)=>Math.max(m,(n.tick*2+(n.enbSustainTime??0))/20),0)}:null,tempo:10,notes,events:[...gm].sort((a,b)=>a[0]-b[0]).map(([tick,notes])=>({tick,notes})),warnings,timingErrorMs,pitchChanged,muted,merged,speed,transpose,denseChordCount:denseChords.length};
 }
 module.exports={normalize,names,bases};
