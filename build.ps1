@@ -14,9 +14,9 @@ if ($LASTEXITCODE -ne 0) { throw 'GPU helper build failed' }
 New-Item -ItemType Directory -Force -Path '.\runtime\gpu' | Out-Null
 Copy-Item -Path '.\dist\gpu_backend\*' -Destination '.\runtime\gpu' -Recurse -Force
 }
-& $converterPython -m PyInstaller --noconfirm --clean --windowed --onedir --distpath $DistPath --name '音符工坊2.10.1' --icon 'desktop/studio.ico' --version-file 'desktop/version-info.txt' --add-data 'engine;engine' --add-data 'runtime;runtime' --add-data 'desktop;desktop' --add-data 'README-2.9.md;.' --collect-data webview --copy-metadata pywebview desktop_app.py
+& $converterPython -m PyInstaller --noconfirm --clean --windowed --onedir --distpath $DistPath --name '音符工坊2.11.0' --icon 'desktop/studio.ico' --version-file 'desktop/version-info.txt' --add-data 'engine;engine' --add-data 'runtime;runtime' --add-data 'desktop;desktop' --add-data 'README-2.9.md;.' --collect-data webview --copy-metadata pywebview desktop_app.py
 if ($LASTEXITCODE -ne 0) { throw 'PyInstaller failed' }
-$converterRelease = Join-Path $DistPath '音符工坊2.10.1'
+$converterRelease = Join-Path $DistPath '音符工坊2.11.0'
 Copy-Item -LiteralPath '.\README.md' -Destination (Join-Path $converterRelease '使用说明.md')
 Copy-Item -LiteralPath '.\README-2.9.md' -Destination (Join-Path $converterRelease '新版界面说明.md')
 
@@ -26,5 +26,5 @@ Copy-Item -LiteralPath '.\companion\配套模组' -Destination $converterRelease
 Copy-Item -LiteralPath '.\README-2.10.md' -Destination (Join-Path $converterRelease '版本兼容说明.md')
 Copy-Item -LiteralPath '.\LICENSE','.\THIRD_PARTY_NOTICES.md' -Destination $converterRelease -Force
 New-Item -ItemType Directory -Force -Path (Join-Path $converterRelease 'docs') | Out-Null
-Copy-Item -LiteralPath '.\docs\compatibility.md','.\docs\development.md' -Destination (Join-Path $converterRelease 'docs') -Force
+Copy-Item -LiteralPath '.\docs\compatibility.md','.\docs\development.md','.\docs\midi.md','.\docs\OpenNBS-MIT.txt' -Destination (Join-Path $converterRelease 'docs') -Force
 Copy-Item -LiteralPath '.\docs\images' -Destination (Join-Path $converterRelease 'docs') -Recurse -Force

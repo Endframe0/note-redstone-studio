@@ -40,3 +40,7 @@
 感谢所有公开研究、文档和反馈的贡献者。音乐及第三方资源的权利归其各自作者。本项目不附带歌曲库。
 
 本软件由 GPT6Astra 制作。
+
+## MIDI 乐器映射
+
+`engine/midi-instruments.json` 的 GM、打击乐音色与八度数据来自 OpenNBS / NoteBlockStudio，固定版本 `79b22ad890631a39196d45b9c27881599f9b04ab`，由 Open Note Block Studio 社区及 u3002 等贡献者维护。上游 MIT 许可全文见 `docs/OpenNBS-MIT.txt`。MIDI 文件解析、时序适配及包络转换由本项目独立实现。

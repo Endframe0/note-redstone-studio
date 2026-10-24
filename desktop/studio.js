@@ -4,12 +4,14 @@ const number=n=>Number(n||0).toLocaleString('zh-CN');
 const icon=id=>`<svg aria-hidden="true"><use href="#i-${id}"/></svg>`;
 const modes=['体积优先','极限省材（强制乐句复用）','毒曲（宽高 ≤100，自动跟随）'];
 const fields={
+ automatic:[["auto_sound","制作版本 · 由你选择"],["auto_pitch","超出音域时怎么办"]],
+ midi:[['midi_timing','节奏处理'],['midi_speed_tolerance','允许速度调整（±%）'],['midi_envelope','音量包络'],['midi_fade_in','淡入（毫秒）'],['midi_fade_out','淡出（毫秒）']],
  primary:[['target','Java 版本'],['sound_engine','音域方案'],['support','结构支撑','不改变乐器底座'],['speed','播放速度']],
  shape:[['aspect','地面长宽差距','短边 40 格、允许长 50%，则长边最多 60 格。'],['spatial_aspect','整体长宽高比例','倍数越小，整体越接近方块。'],['listening_radius','中心听音半径','中心到最远角落的距离，不保证音量一致。']],
  music:[['timing','音乐时序'],['pitch','音高处理'],['transpose','移调','半音 · −48 至 48'],['max_tracks','并行线路上限']],
  compute:[['budget','搜索时间'],['backend','计算设备'],['threads','CPU 并行线程','1–128 个线程']]
 };
-const numeric={transpose:[-48,48],threads:[1,128],limit_0:[4,512],limit_1:[4,512],limit_2:[4,384]};
+const numeric={midi_fade_in:[0,20000],midi_fade_out:[0,20000],transpose:[-48,48],threads:[1,128],limit_0:[4,512],limit_1:[4,512],limit_2:[4,384]};
 let api=null,values={},paths={},choices={},profiles=[],selected=0,appearance={theme:'glass',motion:true,font_size:100};
 let versionCatalog=[];
 const versionGroup=id=>id.startsWith('26.')?'26.1–26.3':id.startsWith('1.21')?'1.21–1.21.11':'1.20–1.20.6';
@@ -29,11 +31,11 @@ let analysisTimer,analysisVersion=0,analysisBusy=false,analysisResult=null;
 function renderAnalysis(){
  $("#analysisRose").hidden=!analysisBusy;if(analysisBusy)analysisRose.start();else analysisRose.stop();
  const r=analysisResult,s=r?.summary;
- $('#analysisTitle').textContent=analysisBusy?'正在识别这首音乐…':s?'已识别 · '+(s.objective==='toxic'?'密集音符布局':'紧凑红石布局'):r?.error?'需要调整后再转换':'等待选择 NBS 文件';
+ $('#analysisTitle').textContent=analysisBusy?'正在识别这首音乐…':s?'已识别 · '+(s.objective==='toxic'?'密集音符布局':'紧凑红石布局'):r?.error?'需要调整后再转换':'等待选择音乐文件';
  $('#songAnalysis').classList.toggle('analysis-error',!!r?.error&&!analysisBusy);
- $('#analysisFacts').textContent=analysisBusy?'读取真实速度、音域和同时发声音符数，不进行布局搜索。':s?`${s.tempo} tick/s · ${number(s.notes)} 个音符 · 最多 ${s.peak} 音同时发声 · 约 ${Math.ceil(s.durationSeconds)} 秒`:r?.error||'自动识别速度、音域和密度，不修改源文件。';
+ $('#analysisFacts').textContent=analysisBusy?'读取真实速度、音域和同时发声音符数，不进行布局搜索。':s?`${Number(s.tempo.toFixed(3))} ${s.sourceType==='midi'?'BPM':'tick/s'} · ${number(s.notes)} 个音符 · 最多 ${s.peak} 音同时发声 · 约 ${Math.ceil(s.durationSeconds)} 秒`:r?.error||'自动识别速度、音域和密度，不修改源文件。';
  $('#analysisDecisions').replaceChildren();
- if(s&&!analysisBusy&&values.adaptive!==false)$('#footerSub').textContent=(s.soundEngine==='extended'?'需要 ENB 模组 · ':'原版音符盒 · ')+s.timeResolution+'t 严格时序 · 原速播放';
+ if(s&&!analysisBusy&&values.adaptive!==false)$('#footerSub').textContent=(s.soundEngine==='extended'?'需要 ENB 模组 · ':'原版音符盒 · ')+s.timeResolution+'t · '+(s.sourceType==='midi'?(s.midi.exact?'节拍整刻对齐':'有量化误差，见分析说明'):'原速播放');
  if(s&&!analysisBusy)for(const message of s.messages){const li=document.createElement('li');li.textContent=message;$('#analysisDecisions').append(li);}
 }
 function scheduleAnalysis(){
@@ -73,8 +75,12 @@ function fill(){
  $('#inputPath').value=paths.input||'';$('#outputPath').value=paths.output||'';fileChanged();applyDependencies();renderProfiles();scheduleAnalysis();
 }
 function applyDependencies(){
- const automatic=values.adaptive!==false;
+ const automatic=values.adaptive!==false,isMidi=/\.midi?$/i.test(paths.input||'');
+ $('#setupHint').textContent=isMidi?'MIDI 自动适配 10t / 20t 和布局，纯原版 / ENB 由你选择；速度调整与量化误差见分析说明。':'自动配置负责时序和布局，纯原版 / ENB 由你选择，程序不会自行切换。';
  document.body.classList.toggle('auto-setup',automatic);
+ $('#automaticFields').hidden=$('#autoSoundHint').hidden=!automatic;
+ const usesEnb=automatic?values.auto_sound==='ENB 模组音符盒':values.sound_engine.startsWith('ENB');
+ $('#autoSoundHint').textContent=usesEnb?(isMidi?'ENB 模组版：需要 26.x 配套 ENB，保留 MIDI 时长、力度和渐变。':'ENB 模组版：需要对应版本的配套模组，保留扩展音域和音符力度。'):'纯原版：无需音域模组，保留乐器与起音。两八度音域；不能独立设置时长、淡入淡出和力度。超出音域可自行选择八度折叠。';
  $('#autoSetup').setAttribute('aria-pressed',String(automatic));$('#manualSetup').setAttribute('aria-pressed',String(!automatic));
  $('#autoSetup').disabled=$('#manualSetup').disabled=$('#quickTarget').disabled=$('#quickRange').disabled=state.running;
  renderVersions();
@@ -88,18 +94,18 @@ function applyDependencies(){
   '适合每刻数百音符的黑乐谱。宽、高不超过 100 格，长度不限；自带启动与每游戏刻跟随。'][mode];
  const shape=['limit_0','limit_1','limit_2','aspect','spatial_aspect','listening_radius'];
  $$('[data-setting]').forEach(el=>{
-  const k=el.dataset.setting;el.disabled=state.running||(!volume&&(shape.includes(k)||['backend','heavy_core'].includes(k)))||(toxic&&k==='auto_start_wiring');
+  const k=el.dataset.setting;el.disabled=state.running||(isMidi&&k==='timing')||(isMidi&&!usesEnb&&['midi_envelope','midi_fade_in','midi_fade_out'].includes(k))||(!volume&&(shape.includes(k)||['backend','heavy_core'].includes(k)))||(toxic&&k==='auto_start_wiring');
  });
  if(toxic){values.auto_start_wiring=true;$('#auto_start_wiring').checked=true;}
  $('#shapeSummary').textContent=volume?`主体上限 ${values.limit_0} × ${values.limit_1} × ${values.limit_2} 格 · 听音半径 ${values.listening_radius}`:toxic?'毒曲固定宽高 ≤100 格 · 长度不限':'省材模式不限制主体尺寸';
  $('#shapeHelp').textContent=volume?'仅限制主体尺寸，外部启动线不计入；X × Z × Y 分别为长、宽、高。':toxic?'以下参数仅用于体积模式；毒曲使用固定的 100 格宽高上限。':'以下参数仅用于体积模式；省材模式以材料数量为目标。';
- $('#soundHint').textContent=values.sound_engine.startsWith('自动')?'按音域和力度选择原版或 ENB，需要模组时会提前提示。':values.sound_engine.startsWith('ENB')?'保留音符力度 × 音轨音量。需 ENB 配套模组，粘贴时保留方块实体 NBT。':values.sound_engine.startsWith('Quinn')?'需 Java 26.1.2、Quinn v1.3 数据包与资源包，投影粘贴须包含实体。':'原版两八度，无需额外模组；不能独立还原每个音符的力度与声像。';
+ $('#soundHint').textContent=isMidi?(usesEnb?'MIDI 使用 26.x ENB，保留持续时间、力度与导入包络。':'MIDI 转原版音符盒：保留乐器、音高与起音，不保留独立时长、渐变与力度。'):values.sound_engine.startsWith('ENB')?'保留音符力度 × 音轨音量。需 ENB 配套模组，粘贴时保留方块实体 NBT。':values.sound_engine.startsWith('Quinn')?'需 Java 26.1.2、Quinn v1.3 数据包与资源包，投影粘贴须包含实体。':'原版两八度，无需额外模组；不能独立还原每个音符的力度与声像。';
  $('#computeNote').textContent=!volume?'此模式由 CPU 计算。搜索缓存会自动保存；转换中仍可取消。':values.backend.includes('GPU')?'GPU 加速普通几何搜索，其余模板继续使用 CPU。需要兼容 CUDA 的 NVIDIA 显卡。':'普通布线与压缩模板同时运行，自动保存当前最优。持续优化时，可随时点击“导出当前最优”。';
  $('#startBtn').disabled=state.running||!paths.input?.trim()||(values.adaptive!==false&&(analysisBusy||!analysisResult?.ok));
  for(const id of ['inputPath','outputPath','pickInput','pickOutput','profileSelect'])$('#'+id).disabled=state.running;
  $('#saveProfile').disabled=state.running||!selected;$('#renameProfile').disabled=state.running||!selected;
 }
-function fileChanged(){const file=(paths.input||'').split(/[\\/]/).pop();$('#fileName').textContent=file||'选择你的旋律';$('#fileName').title=file||'';$('#fileSub').textContent=file?'NBS 音乐文件 · 准备转换':'支持新旧版 Note Block Studio 文件';$('#footerSub').textContent=file||'选择音乐，设置将自动保存';}
+function fileChanged(){const file=(paths.input||'').split(/[\\/]/).pop();$('#fileName').textContent=file||'选择你的旋律';$('#fileName').title=file||'';$('#midiSettings').hidden=!/\.midi?$/i.test(file||'');$('#fileSub').textContent=file?(/\.midi?$/i.test(file)?'MIDI · 保留时长与力度':'NBS 音乐文件 · 准备转换'):'支持 NBS、MID 与 MIDI 文件';$('#footerSub').textContent=file||'选择音乐，设置将自动保存';}
 function saveSoon(){unsaved=true;revision++;clearTimeout(saveTimer);saveTimer=setTimeout(()=>persist(),220);}
 function persist(){
  clearTimeout(saveTimer);if(!initialized||!api)return Promise.resolve();
@@ -138,7 +144,7 @@ function updateState(next){
   if(state.running)rose.start();else rose.stop();
   $('#stageOverline').textContent=state.running?'ROSE FOUR · SEARCH IN MOTION':state.phase==='done'?'MUSIC, NOW IN BLOCKS':'一首音乐，无限种排列。';
   $('#stageTitle').textContent={reading:'先听懂，再折叠。',searching:'正在寻找更好的形状',exporting:'把这一刻的最优留下',done:'旋律，已经有了形状。',error:'这次需要调整一下',cancelled:'暂停探索，灵感还在。',cancelling:'正在收好这次探索'}[state.phase]||'下一件作品，从这里开始';
-  $('#stageSub').textContent=state.running?'随时取消 · 有方案后可手动导出':state.phase==='done'?'投影与使用说明已保存到输出目录。':state.phase==='error'?'详细原因请查看下方转换记录。':'导入 NBS，开始探索它的空间。';
+  $('#stageSub').textContent=state.running?'随时取消 · 有方案后可手动导出':state.phase==='done'?'投影与使用说明已保存到输出目录。':state.phase==='error'?'详细原因请查看下方转换记录。':'导入音乐，开始探索它的空间。';
  }
  if(state.report&&state.report.folder!==previewReport){previewReport=state.report.folder;loadLayer(2);toast('转换完成，投影已导出。');}
  if(!state.report&&previewReport){previewReport='';previewData=null;$('.preview-empty').hidden=false;$('#previewCanvas').hidden=true;$('#layerTools').hidden=true;}

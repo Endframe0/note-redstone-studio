@@ -4,9 +4,9 @@
 
 **音符工坊 · Note Redstone Studio**
 
-从一份 NBS，到一台可以在 Minecraft 中搭建的红石音乐机。
+从一份 NBS 或 MIDI，到一台可以在 Minecraft 中搭建的红石音乐机。
 
-[![Release](https://img.shields.io/badge/release-v2.10.1-647db5?style=flat-square)](https://github.com/Endframe0/note-redstone-studio/releases/latest) ![Platform](https://img.shields.io/badge/Windows-10%20%2F%2011-687ca5?style=flat-square) ![Minecraft](https://img.shields.io/badge/Java-1.20%20%E2%80%94%2026.3-7c80ba?style=flat-square) [![License](https://img.shields.io/badge/License-AGPL--3.0--or--later-728695?style=flat-square)](LICENSE)
+[![Release](https://img.shields.io/badge/release-v2.11.0-647db5?style=flat-square)](https://github.com/Endframe0/note-redstone-studio/releases/latest) ![Platform](https://img.shields.io/badge/Windows-10%20%2F%2011-687ca5?style=flat-square) ![Minecraft](https://img.shields.io/badge/Java-1.20%20%E2%80%94%2026.3-7c80ba?style=flat-square) [![License](https://img.shields.io/badge/License-AGPL--3.0--or--later-728695?style=flat-square)](LICENSE)
 
 **[下载 Windows 便携版](https://github.com/Endframe0/note-redstone-studio/releases/latest)** · [开始使用](#开始使用) · [版本兼容](docs/compatibility.md) · [作者致谢](#作者致谢)
 
@@ -14,17 +14,17 @@
 
 ## 把音乐变成可以搭建的作品
 
-音符工坊读取 `.nbs` 音乐，分析音高、力度、速度和重复片段，寻找更合适的电路排布，导出 **Litematica 投影、材料清单和启动说明**。在游戏里，真正发声的是红石驱动的音符盒。
+音符工坊读取 `.nbs`、`.mid`、`.midi` 音乐，分析音高、力度、速度和重复片段，寻找更合适的电路排布，导出 **Litematica 投影、材料清单和启动说明**。在游戏里，真正发声的是红石驱动的音符盒。
 
-初次使用可以交给自动配置：选歌、选游戏版本、开始转换。熟悉之后，再打开手动配置调整尺寸、材料、音域和搜索方式。
+初次使用可以交给自动配置：选歌、选游戏版本，明确选择纯原版或 ENB 模组版，再开始转换。熟悉之后，再打开手动配置调整尺寸、材料、音域和搜索方式。
 
 ![《七里香》全音域红石音乐机，Minecraft 海洋地图实录](docs/images/qilixiang-gameplay.png)
 
 <p align="center"><b>《七里香》</b> · 音符数 <b>7,714</b> · 曲目长度 <b>4 分 34 秒</b><br><sub>全音域演示使用 Extended Note Block；主体尺寸 40 × 35 × 39 格（长 × 宽 × 高，不计外部启动电路）。</sub></p>
 
-![毛玻璃「浮光」工作台，2.10.1 实际界面](docs/images/workbench.png)
+![毛玻璃「浮光」工作台，2.11.0 实际界面](docs/images/workbench.png)
 
-<sub>截图使用本地测试文件演示操作；发布包不附带这些 NBS。</sub>
+<sub>截图使用本地测试文件演示操作；发布包不附带这些音乐文件。</sub>
 
 <table>
 <tr><td width="50%"><b>更紧凑的音乐机</b><br>普通布线、沙子独立轨与层间压缩共同搜索；根据歌曲选择并行轨道、强充能节点与重复片段复用。</td><td width="50%"><b>保留歌曲的时序</b><br>自动识别 2、5、20 tick/s 等节奏。可精确映射的起音保持原速；20t 使用奇偶分相电路。</td></tr>
@@ -37,27 +37,31 @@
 
 ### 01 · 下载并打开
 
-在 [Releases](https://github.com/Endframe0/note-redstone-studio/releases/latest) 下载 `Note-Redstone-Studio-2.10.1-Windows-x64.zip`，**完整解压**后运行 `音符工坊2.10.1.exe`。不要只取出 EXE。
+在 [Releases](https://github.com/Endframe0/note-redstone-studio/releases/latest) 下载 `Note-Redstone-Studio-2.11.0-Windows-x64.zip`，**完整解压**后运行 `音符工坊2.11.0.exe`。不要只取出 EXE。
 
 - Windows 10 / 11，64 位；便携版无需另外安装 Python 或 Node.js。
 - 需要 [Microsoft Edge WebView2 Runtime](https://developer.microsoft.com/microsoft-edge/webview2/)。多数 Windows 电脑已有；缺少时安装 Evergreen Runtime。
-- 桌面转换在本地运行，不上传你的 NBS。发布包不附带歌曲或演示 NBS，请准备自己的文件。
+- 桌面转换在本地运行，不上传你的音乐文件。发布包不附带歌曲或演示 NBS，请准备自己的文件。
 
 ### 02 · 导入音乐，选择版本
 
-点击 **选择 NBS**，指定输出目录。保持 **自动配置**，先选择 Minecraft 版本范围，再选择实际游玩的具体版本。
+点击 **选择音乐**，指定输出目录。保持 **自动配置**，先选择 Minecraft 版本范围和具体版本，再明确选择 **纯原版音符盒 / ENB 模组音符盒**。软件只自动安排节拍和布局，不会替你切换制作版本。
+
+**MIDI 可直接转为原版或模组音符盒。**按 Open Note Block Studio 的乐器映射转换，自动比较 10t / 20t，并在允许范围内调整 BPM。纯原版保留乐器、音高与起音；超出两八度可自行选择折叠。ENB 模组版另外读取 Note Off、延音踏板和力度，并提供淡入淡出设置。持续时间与包络需要 **26.x 配套 ENB**；短采样不会自动延长成持续长音，无法精确对齐时会显示量化误差。见 [MIDI 导入说明](docs/midi.md)。
 
 ![导入音乐与版本选择，毛玻璃界面](docs/images/import.png)
 
-自动识别会解释所选的时序和音域方案：
+自动识别会解释时序和所选制作版本的限制：
 
 | 你的音乐 | 默认处理 |
 | :--- | :--- |
 | 2、5 tick/s 等可精确映射的音乐 | 保持原速，使用合适的严格时序 |
 | 20 tick/s / 起音需要 0.05 秒精度 | 自动选择 20t 严格档 |
-| 超出原版音域，或需要保留音符力度 | 使用配套 ENB；游戏需要安装对应模组 |
+| 超出所选音域 | 提示选择八度折叠，或由你改选 ENB 模组版 |
+| 需要保留独立力度、MIDI 时长和渐变 | 由你选择 ENB 模组版；程序不会自动切换 |
 | 超过 20,000 音符，或同时发声超过 136 音 | 自动切换毒曲模式 |
-| 节奏无法精确落在游戏刻上 | 明确提示；是否近似由你在手动配置决定 |
+| NBS 节奏无法精确落在游戏刻上 | 明确提示；是否近似由你在手动配置决定 |
+| MIDI 节拍不能直接对齐 | 默认允许 ±10% 整体变速；仍无法对齐时报告量化误差 |
 
 ### 03 · 开始搜索，导出方案
 
@@ -120,7 +124,7 @@ GPU 需要兼容的 NVIDIA 显卡与驱动；**不是所有 NVIDIA 型号都保�
 
 **这是播放器吗？**<br>这是转换器，输出可搭建的电路。普通结构由红石驱动音符盒；毒曲的命令方块负责跟随，不使用播放声音命令代替音符盒。
 
-**为什么选自动配置后需要 ENB？**<br>原版音符盒不能完整保留扩展音域和逐音力度。自动配置不会悄悄折叠高低音或丢弃力度，因此会提示使用配套 ENB。
+**自动配置会替我选择模组吗？**<br>不会。纯原版或 ENB 模组版由你选择。原版支持 NBS 和 MIDI，但不能独立还原音符时长、渐变与力度；超出两八度时可自行选择八度折叠，或改选 ENB。
 
 **为什么材料清单与主体包围盒不同？**<br>优化指标排除了外部启动线，但真正搭建仍需要这些方块，清单会计入。Litematica 的完整边界也必须容纳它们。
 
@@ -149,7 +153,7 @@ GPU 需要兼容的 NVIDIA 显卡与驱动；**不是所有 NVIDIA 型号都保�
 | **Emil Kowalski · [Design Engineering Skills](https://github.com/emilkowalski/skills)** | 界面层次、交互反馈与动效节奏的设计参考。 |
 | **Paidax01 · [Math Curve Loaders / Rose Four](https://paidax01.github.io/math-curve-loaders/)** | 搜索与加载的数学曲线动画参考；本项目使用独立 Canvas 实现。 |
 | **maruohon、sakura-ryoko 与 Litematica / MaLiLib 贡献者** | 投影生态与格式兼容参考；[上游项目](https://github.com/maruohon/litematica) · [维护分支](https://github.com/sakura-ryoko/litematica)。 |
-| **Open Note Block Studio 社区** | NBS 音乐格式与制作生态；[项目地址](https://github.com/OpenNBS/OpenNoteBlockStudio)。 |
+| **Open Note Block Studio 社区与 u3002** | NBS 音乐格式、GM 乐器与打击乐映射；[项目地址](https://github.com/OpenNBS/NoteBlockStudio) · [映射来源](https://github.com/OpenNBS/NoteBlockStudio/blob/79b22ad890631a39196d45b9c27881599f9b04ab/scripts/midi_instruments/midi_instruments.gml)。映射表保留 [MIT 许可](docs/OpenNBS-MIT.txt)。 |
 | **Etho、Xisuma 与红石创作者社区** | 漏斗计时、可平铺模块、音乐机存储与发声分离等结构研究参考。 |
 | **pywebview、Node.js、Python、Fabric、exp4j 等贡献者** | 桌面窗口、运行时、模组加载与表达式计算等基础组件。 |
 

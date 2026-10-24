@@ -40,22 +40,24 @@
    <button class="nav-item" id="showLog"><svg><use href="#i-file"/></svg>转换记录<span id="logCount">0</span></button>
   </nav>
   <div class="sidebar-note"><span class="tiny-symbol">♪</span><p>让每一段旋律<br>都有自己的形状。</p><div class="note-rule"></div><small>音乐 → 电路 → 世界</small></div>
-  <div class="sidebar-bottom"><div class="online"><span></span>本地运行 · 无需联网</div><div class="version">DESKTOP <b id="version">2.10.1</b></div><button id="aboutBtn" class="text-button">关于与设计致谢 ↗</button></div>
+  <div class="sidebar-bottom"><div class="online"><span></span>本地运行 · 无需联网</div><div class="version">DESKTOP <b id="version">2.11.0</b></div><button id="aboutBtn" class="text-button">关于与设计致谢 ↗</button></div>
  </aside>
  <header class="topbar" id="windowTitlebar" title="拖动窗口 · 双击最大化"><div class="title-drag" title="拖动窗口 · 双击最大化"><div class="breadcrumb">工作空间 <span>/</span> <strong>新建转换</strong></div></div><div class="top-actions"><button class="theme-toggle" id="themeBtn" aria-label="选择外观主题" aria-haspopup="menu" aria-expanded="false"><svg id="themeIcon"><use href="#i-glass"/></svg><span id="themeLabel">浮光</span></button></div></header>
  <main class="workspace">
   <div class="editor" id="editor">
-   <div class="hero"><div><div class="eyebrow"><span></span> MUSIC INTO MATTER</div><h1>把音乐，<em>折叠成红石。</em></h1><p>从一个 NBS 文件开始，找到旋律在方块里的形状。</p></div><div class="hero-glyph" aria-hidden="true"><svg><use href="#i-cube"/></svg><span>♫</span></div></div>
-   <section class="panel source-panel" id="music"><div class="section-head"><h2><span class="step">01</span> 音乐与输出</h2><span class="micro-label">.NBS → .LITEMATIC</span></div>
-    <div class="source-card" id="sourceCard"><div class="file-emblem"><svg><use href="#i-wave"/></svg></div><div class="file-info"><strong id="fileName">选择你的旋律</strong><span id="fileSub">支持新旧版 Note Block Studio 文件</span></div><button class="button" id="pickInput">选择 NBS <svg><use href="#i-folder"/></svg></button></div>
-    <div class="path-edit"><label for="inputPath">文件路径</label><input id="inputPath" type="text" placeholder="也可以在这里粘贴 NBS 文件路径" spellcheck="false"></div>
+   <div class="hero"><div><div class="eyebrow"><span></span> MUSIC INTO MATTER</div><h1>把音乐，<em>折叠成红石。</em></h1><p>从 NBS 或 MIDI 文件开始，找到旋律在方块里的形状。</p></div><div class="hero-glyph" aria-hidden="true"><svg><use href="#i-cube"/></svg><span>♫</span></div></div>
+   <section class="panel source-panel" id="music"><div class="section-head"><h2><span class="step">01</span> 音乐与输出</h2><span class="micro-label">.NBS / .MID → .LITEMATIC</span></div>
+    <div class="source-card" id="sourceCard"><div class="file-emblem"><svg><use href="#i-wave"/></svg></div><div class="file-info"><strong id="fileName">选择你的旋律</strong><span id="fileSub">支持 NBS、MID 与 MIDI 文件</span></div><button class="button" id="pickInput">选择音乐 <svg><use href="#i-folder"/></svg></button></div>
+    <div class="path-edit"><label for="inputPath">文件路径</label><input id="inputPath" type="text" placeholder="也可以在这里粘贴 NBS 或 MIDI 文件路径" spellcheck="false"></div>
     <div class="output-row"><label for="outputPath"><svg><use href="#i-folder"/></svg>输出到</label><input id="outputPath" type="text" spellcheck="false"><button class="icon-button" id="pickOutput" aria-label="更改输出目录" title="更改输出目录"><svg><use href="#i-chevron"/></svg></button></div>
    </section>
+   <details class="panel disclosure" id="midiSettings" hidden><summary><div><strong>MIDI 时长与节拍</strong><small>自动选择 10t / 20t · 读取 Note Off 和延音踏板</small></div><svg><use href="#i-chevron"/></svg></summary><div class="disclosure-body"><div class="field-grid" id="midiFields"></div><p class="help">MIDI 没有统一淡入淡出时值。毫秒值由你设置，按 50 ms 游戏刻导出，并限制在音符时长以内。持续时间与渐变仅用于 26.x ENB 模组版；纯原版只保留起音、音高和乐器。短采样不会自动循环成持续长音。</p></div></details>
    <section class="panel setup-panel" id="setup">
     <div class="section-head"><h2><span class="step">02</span> 转换方式</h2><span class="badge">选好音乐，就能开始</span></div>
     <div class="setup-switch" role="group" aria-label="转换方式"><button id="autoSetup" aria-pressed="true">自动配置 <small>按歌曲选择，适合直接使用</small></button><button id="manualSetup" aria-pressed="false">手动配置 <small>保留全部参数与配置槽</small></button></div>
     <div class="field quick-target"><label for="quickRange">Minecraft 版本范围</label><select id="quickRange" aria-label="Minecraft 版本范围"></select><label for="quickTarget">具体版本</label><select id="quickTarget" aria-label="具体 Minecraft 版本"></select><small id="versionHint"></small></div>
-    <div id="songAnalysis" class="song-analysis" role="status" aria-live="polite"><canvas id="analysisRose" width="100" height="100" aria-label="Rose Four 文件识别动画" hidden></canvas><strong id="analysisTitle">等待选择 NBS 文件</strong><p id="analysisFacts">自动识别速度、音域和密度，不修改源文件。</p><ul id="analysisDecisions"></ul></div>
+    <div class="field-grid" id="automaticFields"></div><p class="help" id="autoSoundHint"></p>
+    <div id="songAnalysis" class="song-analysis" role="status" aria-live="polite"><canvas id="analysisRose" width="100" height="100" aria-label="Rose Four 文件识别动画" hidden></canvas><strong id="analysisTitle">等待选择音乐文件</strong><p id="analysisFacts">自动识别速度、音域和密度，不修改源文件。</p><ul id="analysisDecisions"></ul></div>
     <p class="help" id="setupHint">自动配置保持原曲速度和音高；需要模组时会在这里提示。手动参数独立保留。</p>
    </section>
    <section class="panel" id="layout"><div class="section-head"><h2><span class="step">02</span> 布局与压缩</h2><span class="badge">多模板共同搜索</span></div>
@@ -80,7 +82,7 @@
    <div class="stage" id="stage"><div class="stage-grid"></div><div class="stage-cross top-left">+</div><div class="stage-cross bottom-right">+</div>
     <div class="idle-art" id="idleArt" aria-hidden="true"><svg viewBox="0 0 280 200"><g class="block-stack" fill="none" stroke="currentColor" stroke-width="1.3"><path class="slab" d="m35 119 105-56 105 56-105 57zM35 119v10l105 57 105-57v-10M140 176v10"/><path class="slab" d="m52 87 88-47 88 47-88 47zM52 87v12l88 47 88-47V87M140 134v12"/><path class="slab" d="m70 55 70-37 70 37-70 37zM70 55v12l70 37 70-37V55M140 92v12"/><path class="trace" d="m98 55 42-22 42 22-28 15-28-15 14-7m0 72 28-15 28 15m-98 18 28 15 56-30"/></g><g class="art-nodes" fill="currentColor"><circle cx="98" cy="55" r="3"/><circle cx="140" cy="48" r="3"/><circle cx="98" cy="138" r="3"/></g></svg></div>
     <canvas id="rose" width="420" height="420" aria-label="Rose Four 搜索动画" hidden></canvas>
-    <div class="stage-copy"><span id="stageOverline">一首音乐，无限种排列。</span><strong id="stageTitle">下一件作品，从这里开始</strong><small id="stageSub">导入 NBS，开始探索它的空间。</small></div>
+    <div class="stage-copy"><span id="stageOverline">一首音乐，无限种排列。</span><strong id="stageTitle">下一件作品，从这里开始</strong><small id="stageSub">导入音乐，开始探索它的空间。</small></div>
    </div>
    <div class="metric-grid"><div><span>音符数量</span><strong id="noteMetric">—</strong></div><div><span>已搜索候选</span><strong id="attemptMetric">—</strong></div><div><span>当前最优主体</span><strong id="bestMetric">—</strong></div><div><span>总用时</span><strong id="timeMetric">00:00</strong></div></div>
    <div class="lane-list" id="lanes"></div>
@@ -97,7 +99,7 @@
 <div class="resize-handles" aria-hidden="true"><div data-edge="left"></div><div data-edge="right"></div><div data-edge="top"></div><div data-edge="bottom"></div><div data-edge="top-left"></div><div data-edge="top-right"></div><div data-edge="bottom-left"></div><div data-edge="bottom-right"></div></div>
 <div class="toast" id="toast" role="status" aria-live="polite"></div>
 <dialog id="renameDialog"><form method="dialog"><div class="dialog-head"><h2>给配置起个名字</h2><button class="icon-button" value="cancel" aria-label="关闭"><svg><use href="#i-close"/></svg></button></div><p>下次选择它，就能载入这一组设置。</p><label for="profileName">配置名称</label><input id="profileName" maxlength="24" required autocomplete="off"><div class="dialog-actions"><button class="button" value="cancel" formnovalidate>取消</button><button class="button primary" id="confirmRename" value="save">保存名称</button></div></form></dialog>
-<dialog id="aboutDialog"><div class="dialog-head"><h2>为旋律留一块空间。</h2><button class="icon-button" id="closeAbout" aria-label="关闭"><svg><use href="#i-close"/></svg></button></div><p id="aboutVersion">音符工坊 · Note Redstone Studio · 2.10.1</p><p>界面与动效参考 Emil Kowalski 的 Design Engineering。搜索动画基于 Paidax01 / Math Curve Loaders 的 Rose Four：r = a cos(4θ)。</p><p class="help">浅色「纸间」：中性灰白、压印与实体层叠。<br>深色「夜航」：黑灰面板、蓝色线条与仪表读数。<br>毛玻璃「浮光」：透光卡片、独立侧栏与悬浮操作条。<br>首次使用默认毛玻璃，之后记住上次主题。<br>在右上角可切换主题。动态效果跟随系统的减少动画偏好。</p><p class="help">原版音符盒不支持独立力度；ENB 模式会保存 NBS 音符力度 × 音轨音量，需要配套模组。输出目录内的说明包含各模式接线和使用要求。</p></dialog>
+<dialog id="aboutDialog"><div class="dialog-head"><h2>为旋律留一块空间。</h2><button class="icon-button" id="closeAbout" aria-label="关闭"><svg><use href="#i-close"/></svg></button></div><p id="aboutVersion">音符工坊 · Note Redstone Studio · 2.11.0</p><p>界面与动效参考 Emil Kowalski 的 Design Engineering。搜索动画基于 Paidax01 / Math Curve Loaders 的 Rose Four：r = a cos(4θ)。</p><p class="help">浅色「纸间」：中性灰白、压印与实体层叠。<br>深色「夜航」：黑灰面板、蓝色线条与仪表读数。<br>毛玻璃「浮光」：透光卡片、独立侧栏与悬浮操作条。<br>首次使用默认毛玻璃，之后记住上次主题。<br>在右上角可切换主题。动态效果跟随系统的减少动画偏好。</p><p class="help">原版音符盒不支持独立力度；ENB 模式会保存 NBS 音符力度 × 音轨音量，需要配套模组。输出目录内的说明包含各模式接线和使用要求。</p></dialog>
 <div id="boot" class="boot"><canvas id="bootRose" width="200" height="200"></canvas><strong>正在打开工作台</strong><small id="bootMessage">加载本地设置…</small></div>
 <script src="rose-four.js"></script><script src="studio.js"></script>
 </body></html>

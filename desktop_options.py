@@ -22,7 +22,7 @@ BUDGETS = {'试算 · 10 秒': 10, '快速 · 30 秒': 30, '普通 · 1 分钟':
            '深入 · 5 分钟': 300, '深入 · 10 分钟': 600, '充分 · 30 分钟': 1800,
            '充分 · 60 分钟': 3600, '长时间 · 3 小时': 10800, '持续优化 · 手动导出': 0}
 SOUND_ENGINES = {'原版音符盒': 'vanilla', 'Quinn 扩展音域（v1.3）': 'quinn',
-                 'ENB 扩展音域（MIDI 0–127）': 'extended', '自动选择（原版 / ENB）': 'auto'}
+                 'ENB 扩展音域（MIDI 0–127）': 'extended'}
 SOUND_HINTS = {'vanilla': '原版两八度；不需要额外音域模组或数据包。',
                'quinn': 'Quinn 需 26.1.2、数据包＋资源包；投影粘贴须包含实体。',
                'extended': 'ENB 保留音符力度×音轨音量；需配套模组，粘贴须保留方块实体 NBT。'}
@@ -31,11 +31,12 @@ SOUND_HINTS = {'vanilla': '原版两八度；不需要额外音域模组或数�
 def make_options(values):
     version = VERSION_MAP.get(values['target'])
     if not version: raise ValueError('请选择支持的 Java 正式版本。')
-    if not Path(values['input']).is_file():raise ValueError('请先选择有效的 NBS 文件。')
+    if not Path(values['input']).is_file():raise ValueError('请先选择有效的 NBS 或 MIDI 文件。')
     if not values['output'].strip():raise ValueError('请选择输出目录。')
+    midi=dict(midiTimingMode={'节拍适配（小幅变速）':'fit','保持原速（允许量化）':'original','严格原速（不可量化）':'strict'}.get(values.get('midi_timing'),'fit'),midiSpeedTolerance=float(values.get('midi_speed_tolerance',10)),midiEnvelope='none' if values.get('midi_envelope')=='不使用淡入淡出' else 'custom',midiFadeInMs=int(values.get('midi_fade_in',0)),midiFadeOutMs=int(values.get('midi_fade_out',50)))
     if values.get('adaptive'):
         # Hidden manual settings never veto a fresh automatic plan.
-        return dict(input=values['input'],output=values['output'],target=values['target'],support=SUPPORTS[values['support']],adaptive=True)
+        return dict(input=values['input'],output=values['output'],target=values['target'],support=SUPPORTS[values['support']],adaptive=True,soundEngine='extended' if values.get('auto_sound')=='ENB 模组音符盒' else 'vanilla',pitch='fold' if values.get('auto_pitch')=='八度折叠 / 半音取整' else 'strict',**midi)
     limits=[512,100,100] if not values['objective'].startswith('体积优先') else [int(values[f"limit_{i}"]) for i in range(3)]
     opt={'input':values['input'],'output':values['output'],'target':values['target'],
          'objective':'toxic' if values['objective'].startswith('毒曲') else 'materials' if values['objective'].startswith('极限省材') else 'volume',
@@ -52,6 +53,8 @@ def make_options(values):
          'pitch':'strict' if values['pitch']=='严格保留' else 'fold',
          'soundEngine':SOUND_ENGINES[values['sound_engine']],
          'maxX':limits[0],'maxZ':limits[1],'maxY':limits[2]}
+    is_midi=Path(values['input']).suffix.lower() in ('.mid','.midi')
+    if is_midi: opt.update(timing='auto',timeResolution=10)
     if opt['timeResolution']==20 and opt['objective'] not in ('volume','toxic'):
         raise ValueError('20t 支持体积优先和毒曲模式；省材模式请选 10t。')
     opt.update(heavyCore=values['heavy_core'], stagedSearch=True)
@@ -71,4 +74,5 @@ def make_options(values):
     if opt['backend']=='gpu':
         helper=BASE/'runtime'/'gpu'/'gpu_backend.exe'
         opt['gpuCommand']=([str(helper)] if getattr(sys,'frozen',False) or helper.exists() else [sys.executable,str(BASE/'engine'/'gpu_backend.py')]) + ['--cuda-dir',str(BASE/'runtime'/'cuda-package')]
+    opt.update(midi)
     return opt

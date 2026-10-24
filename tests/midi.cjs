@@ -1,0 +1,47 @@
+'use strict';
+const assert=require('node:assert/strict'),fs=require('fs'),path=require('path');
+const {parse}=require('../engine/midi.cjs'),{plan:timing,mapTick}=require('../engine/midi-timing.cjs'),{plan}=require('../engine/adaptive.cjs'),{normalize}=require('../engine/normalize.cjs');
+const dir=path.resolve('tests/output/midi');fs.mkdirSync(dir,{recursive:true});
+const vlq=n=>{const a=[n&127];while(n=Math.floor(n/128))a.unshift((n&127)|128);return a};
+function smf(tracks,ppq=480){const header=Buffer.alloc(14);header.write('MThd');header.writeUInt32BE(6,4);header.writeUInt16BE(tracks.length===1?0:1,8);header.writeUInt16BE(tracks.length,10);header.writeUInt16BE(ppq,12);
+ return Buffer.concat([header,...tracks.map(events=>{let last=0;const data=[];for(const [tick,...bytes]of events){data.push(...vlq(tick-last),...bytes);last=tick}data.push(0,255,47,0);const b=Buffer.from(data),h=Buffer.alloc(8);h.write('MTrk');h.writeUInt32BE(b.length,4);return Buffer.concat([h,b])})]);}
+const tempo=(tick,us)=>[tick,255,81,3,(us>>16)&255,(us>>8)&255,us&255];
+const buffer=smf([[tempo(0,500000),tempo(960,600000)],[[0,176,7,127],[0,176,11,127],[0,192,24],[0,144,60,100],[120,64,80],[240,128,60,0],[240,176,64,127],[360,128,64,0],[480,176,64,0],[480,144,60,90],[720,144,60,70],[960,128,60,0],[1200,128,60,0],[1440,153,36,127],[1680,137,36,0]]]);
+const raw=parse(buffer);assert.equal(raw.notes.length,5);assert.equal(raw.notes[0].key,51);assert.equal(raw.notes[0].durationSeconds,.25);assert.equal(raw.notes[1].midiEndTick,480);assert.equal(raw.notes[1].durationSeconds,.375);assert.equal(raw.notes[2].midiEndTick,960);assert.equal(raw.notes[3].midiEndTick,1200);assert.equal(raw.notes[4].instrument,2);assert.equal(raw.notes[0].midiVelocity,100);
+assert.throws(()=>parse(buffer.subarray(0,-2)),/截断/);const wrong=Buffer.from(buffer);wrong.writeUInt16BE(2,8);assert.throws(()=>parse(wrong),/Format 2/);
+const running=smf([[[0,144,60,127],[120,64,80],[240,60,0],[480,64,0]]]);assert.equal(parse(running).notes.length,2);
+function rhythm(us,step,count=100){const e=[tempo(0,us)];for(let i=0;i<count;i++){e.push([i*step,144,60,100],[i*step+Math.max(1,step-1),128,60,0])}return parse(smf([e]));}
+const slow=rhythm(600000,240),slowPlan=timing(slow);assert.equal(slowPlan.resolution,10);assert.equal(slowPlan.maxSpeedChangePercent,0);assert(slowPlan.exact);
+const fit=rhythm(Math.round(60e6/119),240,1000),f=timing(fit);assert.equal(f.resolution,20);assert(f.exact);assert(f.maxSpeedChangePercent<1);for(let i=0;i<1000;i++)assert.equal(mapTick(fit.notes[i].midiTick,f),i*5);
+const tight=rhythm(500000,120),t=timing(tight);assert.equal(t.resolution,20);assert(!t.exact);assert(t.maxOnsetErrorMs<=25);assert.equal(t.maxSpeedChangePercent,0);
+assert.throws(()=>timing(tight,{midiTimingMode:'strict'}),/原速无法/);
+const orig=timing(fit,{midiTimingMode:'original'});assert.equal(orig.maxSpeedChangePercent,0);
+const multi=timing(raw);assert(multi.segments.every(s=>s.speedFactor===multi.globalSpeedFactor));
+assert(Math.abs(multi.segments[0].actualBpm/multi.segments[1].actualBpm-1.2)<1e-10);
+const {mapExact}=require('../engine/midi-timing.cjs');
+for(const s of multi.segments.slice(1)){const prev=multi.segments[multi.segments.indexOf(s)-1];assert(Math.abs(s.outputStart-(prev.outputStart+(s.tick-prev.tick)/multi.ppq*prev.ticksPerBeat))<1e-9)}
+assert(Math.abs(mapExact(raw.midi.lastTick,multi)/multi.resolution-raw.midi.durationSeconds/multi.globalSpeedFactor)<1e-9);
+assert.throws(()=>timing(raw,{speed:0}),/速度无效/);
+const p=plan(raw,{adaptive:true,soundEngine:'extended',target:'26.1.2',midiFadeInMs:100,midiFadeOutMs:100}),song=normalize(raw,p.options);
+assert(song.notes.every(n=>Number.isInteger(n.enbSustainTime)&&n.enbSustainTime>0));assert(song.notes.every(n=>n.enbFadeInTime+n.enbFadeOutTime<n.enbSustainTime));
+assert.throws(()=>plan(raw,{adaptive:true,soundEngine:'extended',target:'1.21.1'}),/26.x/);
+const vanilla=plan(raw,{adaptive:true,soundEngine:'vanilla',target:'1.20'});
+assert.equal(vanilla.options.soundEngine,'vanilla');
+const vanillaSong=normalize(raw,vanilla.options);assert.equal(vanillaSong.notes.length,5);
+assert(vanillaSong.notes.every(n=>n.enbSustainTime===undefined));assert(!vanillaSong.midiConversion.envelope.preserved);
+assert(Number.isFinite(vanillaSong.midiConversion.durationSeconds));
+assert.throws(()=>plan(raw,{adaptive:true,soundEngine:'auto'}),/明确选择/);
+const high=parse(smf([[[0,144,96,100],[480,128,96,0]]]));
+assert.throws(()=>plan(high,{adaptive:true,soundEngine:'vanilla'}),/超出原版/);
+const folded=plan(high,{adaptive:true,soundEngine:'vanilla',pitch:'fold'});assert.equal(folded.options.soundEngine,'vanilla');assert(normalize(high,folded.options).pitchChanged>0);
+const a={instrument:0,key:45,enbVelocity:100,enbSustainTime:10},b={...a,enbSustainTime:20};assert.notEqual(require('../engine/note-volume.cjs').toneKey(a),require('../engine/note-volume.cjs').toneKey(b));
+const input=path.join(dir,'midi-validation.mid');fs.writeFileSync(input,buffer);
+const report=require('../engine/cli.cjs').convert({input,output:dir,target:'26.1.2',objective:'toxic',soundEngine:'extended',midiFadeInMs:100,midiFadeOutMs:100},()=>{});
+assert.equal(report.notes,5);assert.equal(report.sourceType,'midi');assert.equal(report.extendedNoteblock.naturalOneShot,false);
+const blocks=JSON.parse(fs.readFileSync(path.join(report.folder,'扩展音符盒配置.json'))).blocks;assert.equal(blocks.length,5);assert(blocks.every(n=>!n.oneShot&&!n.holdUntilRelease));assert(blocks.some(n=>n.fadeInTime>0));
+const vanillaReport=require('../engine/cli.cjs').convert({input,output:dir,target:'1.20',objective:'toxic',soundEngine:'vanilla'},()=>{});
+assert.equal(vanillaReport.notes,5);assert(!vanillaReport.extendedNoteblock);assert.equal(vanillaReport.sourceType,'midi');
+assert.equal(vanillaReport.options.soundEngine,'vanilla');
+fs.writeFileSync(path.join(dir,'verification.json'),JSON.stringify({pass:true,parserNotes:raw.notes.length,tempo119:f,schematic:report.schematic,blocks,vanillaSchematic:vanillaReport.schematic},null,2));
+console.log('PASS MIDI: parsing, running status, overlap, pedal, tempo map, 10t/20t alignment, no drift, envelope identity and real export.');
+module.exports={smf,tempo};

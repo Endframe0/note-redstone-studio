@@ -15,7 +15,7 @@ python desktop_app.py
 node engine/cli.cjs your-config.json
 ```
 
-配置字段示例见 `config.example.json`，将 input 改为自己的 NBS 路径。仓库不附带歌曲。
+配置字段示例见 `config.example.json`，将 input 改为自己的 NBS 或 MIDI 路径。仓库不附带歌曲。MIDI 选项见 [MIDI 导入说明](midi.md)。
 
 ## 打包桌面程序
 
@@ -33,6 +33,8 @@ node engine/cli.cjs your-config.json
 node tests/versions.cjs
 python tests/versions-readback.py
 node tests/versions-enb.cjs
+node tests/midi.cjs
+python tests/midi-readback.py
 ```
 
 这些检查覆盖序列化、目标版本、时序与 ENB 字段；不代替 Minecraft 实机试听。
