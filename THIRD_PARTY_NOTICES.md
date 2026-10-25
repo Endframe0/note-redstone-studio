@@ -41,6 +41,14 @@
 
 本软件由 GPT6Astra 制作。
 
+## 可选音频转录
+
+- **Kyutai、Mirelo 与 MuScriptor 作者**：https://github.com/muscriptor/muscriptor ，代码 MIT，全文见 docs/MuScriptor-MIT.txt。模型权重采用 CC BY-NC 4.0，附加使用条件见模型卡；与本项目 AGPL 许可分别适用。Small 本地模型包保留原始权重、模型卡、许可及校验值；Medium / Large 权重不随便携包分发，由用户自行获取。
+- **CPJKU / Beat This!**：https://github.com/CPJKU/beat_this ，MuScriptor 的节拍识别依赖；代码与已发布权重为 MIT。试用包附带未修改的 final0 节拍模型、MIT 许可和来源校验文件。
+- **truststore 作者与贡献者**：https://github.com/sethmlarson/truststore ，MIT；音频子进程使用 Windows 原生证书验证，许可见 docs/truststore-MIT.txt。
+- **imageio-ffmpeg / FFmpeg 作者与贡献者**：https://github.com/imageio/imageio-ffmpeg 与 https://ffmpeg.org/ ，Python 包装器为 BSD-2-Clause，许可见 docs/imageio-ffmpeg-BSD.txt；通过可选运行库按需安装 FFmpeg，具体二进制遵循其构建许可，不随转换器核心打包。
+- **Astral / uv**：https://github.com/astral-sh/uv ，MIT / Apache-2.0 双许可；用于独立音频环境的按需安装，对应许可见 docs/uv-LICENSE-MIT.txt 与 docs/uv-LICENSE-APACHE.txt。
+
 ## MIDI 乐器映射
 
 `engine/midi-instruments.json` 的 GM、打击乐音色与八度数据来自 OpenNBS / NoteBlockStudio，固定版本 `79b22ad890631a39196d45b9c27881599f9b04ab`，由 Open Note Block Studio 社区及 u3002 等贡献者维护。上游 MIT 许可全文见 `docs/OpenNBS-MIT.txt`。MIDI 文件解析、时序适配及包络转换由本项目独立实现。

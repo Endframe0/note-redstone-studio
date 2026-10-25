@@ -1,6 +1,7 @@
 """Shared desktop choices and stable 2.x profile keys."""
 import os, sys, json
 from pathlib import Path
+from desktop_audio import is_audio
 BASE = Path(getattr(sys, "_MEIPASS", Path(__file__).resolve().parent))
 VERSIONS = json.loads((BASE / 'engine' / 'versions.json').read_text(encoding='utf-8'))
 VERSION_MAP = {v['id']: v for v in VERSIONS}
@@ -33,10 +34,16 @@ def make_options(values):
     if not version: raise ValueError('请选择支持的 Java 正式版本。')
     if not Path(values['input']).is_file():raise ValueError('请先选择有效的 NBS 或 MIDI 文件。')
     if not values['output'].strip():raise ValueError('请选择输出目录。')
+    midi_source=is_audio(values['input']) or Path(values['input']).suffix.lower() in ('.mid','.midi')
+    def pitch_mode(label):
+        return 'smart' if midi_source and label=='原版智能八度（保留音级）' else 'fold' if label=='八度折叠 / 半音取整' else 'strict'
     midi=dict(midiTimingMode={'节拍适配（小幅变速）':'fit','保持原速（允许量化）':'original','严格原速（不可量化）':'strict'}.get(values.get('midi_timing'),'fit'),midiSpeedTolerance=float(values.get('midi_speed_tolerance',10)),midiEnvelope={'MIDI 自适应包络':'adaptive','不使用淡入淡出':'none'}.get(values.get('midi_envelope'),'custom'),midiFadeInMs=int(values.get('midi_fade_in',0)),midiFadeOutMs=int(values.get('midi_fade_out',50)))
+    if midi_source:
+        resolution=values.get('midi_resolution','紧凑优先（低误差时用 10t）')
+        midi.update(midiPrefer10t=resolution.startswith('紧凑优先'),midiAutoResolution=not resolution.startswith('固定'),timeResolution=20 if resolution=='固定 20t' else 10)
     if values.get('adaptive'):
         # Hidden manual settings never veto a fresh automatic plan.
-        return dict(input=values['input'],output=values['output'],target=values['target'],support=SUPPORTS[values['support']],adaptive=True,maxAspect=HORIZONTAL_OPTIONS[values['aspect']],maxSpatialAspect=SPACE_OPTIONS[values['spatial_aspect']],soundEngine='extended' if values.get('auto_sound')=='ENB 模组音符盒' else 'vanilla',pitch='fold' if values.get('auto_pitch')=='八度折叠 / 半音取整' else 'strict',**midi)
+        return dict(input=values['input'],output=values['output'],target=values['target'],support=SUPPORTS[values['support']],adaptive=True,maxAspect=HORIZONTAL_OPTIONS[values['aspect']],maxSpatialAspect=SPACE_OPTIONS[values['spatial_aspect']],soundEngine='extended' if values.get('auto_sound')=='ENB 模组音符盒' else 'vanilla',pitch=pitch_mode(values.get('auto_pitch')),**midi)
     limits=[512,100,100] if not values['objective'].startswith('体积优先') else [int(values[f"limit_{i}"]) for i in range(3)]
     opt={'input':values['input'],'output':values['output'],'target':values['target'],
          'objective':'toxic' if values['objective'].startswith('毒曲') else 'materials' if values['objective'].startswith('极限省材') else 'volume',
@@ -50,10 +57,10 @@ def make_options(values):
          'speed':float(values['speed']),'transpose':int(values['transpose']),
          'timing':'auto' if values['timing'].startswith('自动') else 'strict' if '严格保留' in values['timing'] else 'quantize',
          'timeResolution':20 if values['timing'].startswith('20t') else 10,
-         'pitch':'strict' if values['pitch']=='严格保留' else 'fold',
+         'pitch':pitch_mode(values['pitch']),
          'soundEngine':SOUND_ENGINES[values['sound_engine']],
          'maxX':limits[0],'maxZ':limits[1],'maxY':limits[2]}
-    is_midi=Path(values['input']).suffix.lower() in ('.mid','.midi')
+    is_midi=midi_source
     if is_midi: opt.update(timing='auto',timeResolution=10)
     if opt['timeResolution']==20 and opt['objective'] not in ('volume','toxic'):
         raise ValueError('20t 支持体积优先和毒曲模式；省材模式请选 10t。')

@@ -4,17 +4,21 @@
 
 **音符工坊 · Note Redstone Studio**
 
-从一份 NBS 或 MIDI，到一台可以在 Minecraft 中搭建的红石音乐机。
+从 NBS、MIDI 或音频，到一台可以在 Minecraft 中搭建的红石音乐机。
 
-[![Release](https://img.shields.io/badge/release-v2.11.6-647db5?style=flat-square)](https://github.com/Endframe0/note-redstone-studio/releases/latest) ![Platform](https://img.shields.io/badge/Windows-10%20%2F%2011-687ca5?style=flat-square) ![Minecraft](https://img.shields.io/badge/Java-1.20%20%E2%80%94%2026.3-7c80ba?style=flat-square) [![License](https://img.shields.io/badge/License-AGPL--3.0--or--later-728695?style=flat-square)](LICENSE)
+2.12.3：新增 **AI音频扒谱**，支持 MP3 等音频转录为 MIDI，再生成原版或 ENB 投影。Small 0.1B 随包提供并默认 GPU 优先，显卡不可用时自动回退 CPU；Medium 0.3B / Large 1.4B 可手动下载或从本地目录加载。MIDI 与音频低误差时优先紧凑 10t，密集快音保留 20t。见 [AI音频扒谱说明](docs/audio.md)。
+
+[![Release](https://img.shields.io/badge/release-v2.12.3-647db5?style=flat-square)](https://github.com/Endframe0/note-redstone-studio/releases/latest) ![Platform](https://img.shields.io/badge/Windows-10%20%2F%2011-687ca5?style=flat-square) ![Minecraft](https://img.shields.io/badge/Java-1.20%20%E2%80%94%2026.3-7c80ba?style=flat-square) [![License](https://img.shields.io/badge/License-AGPL--3.0--or--later-728695?style=flat-square)](LICENSE)
 
 **[下载 Windows 便携版](https://github.com/Endframe0/note-redstone-studio/releases/latest)** · [开始使用](#开始使用) · [版本兼容](docs/compatibility.md) · [作者致谢](#作者致谢)
+
+**特别感谢 [Note Block Studio](https://github.com/OpenNBS/NoteBlockStudio) 团队的所有开发人员。**
 
 </div>
 
 ## 把音乐变成可以搭建的作品
 
-音符工坊读取 `.nbs`、`.mid`、`.midi` 音乐，分析音高、力度、速度和重复片段，寻找更合适的电路排布，导出 **Litematica 投影、材料清单和启动说明**。在游戏里，真正发声的是红石驱动的音符盒。
+音符工坊读取 `.nbs`、`.mid`、`.midi`，也支持通过 AI音频扒谱导入 MP3、WAV 等音频，分析音高、力度、速度和重复片段，寻找更合适的电路排布，导出 **Litematica 投影、材料清单和启动说明**。在游戏里，真正发声的是红石驱动的音符盒。
 
 初次使用可以交给自动配置：选歌、选游戏版本，明确选择纯原版或 ENB 模组版，再开始转换。熟悉之后，再打开手动配置调整尺寸、材料、音域和搜索方式。
 
@@ -37,7 +41,7 @@
 
 ### 01 · 下载并打开
 
-在 [Releases](https://github.com/Endframe0/note-redstone-studio/releases/latest) 下载 `Note-Redstone-Studio-2.11.6-Windows-x64.zip`，**完整解压**后运行 `音符工坊2.11.6.exe`。不要只取出 EXE。
+在 [Releases](https://github.com/Endframe0/note-redstone-studio/releases/latest) 下载 `Note-Redstone-Studio-2.12.3-Windows-x64.zip`，**完整解压**后运行 `音符工坊2.12.3.exe`。不要只取出 EXE。
 
 - Windows 10 / 11，64 位；便携版无需另外安装 Python 或 Node.js。
 - 需要 [Microsoft Edge WebView2 Runtime](https://developer.microsoft.com/microsoft-edge/webview2/)。多数 Windows 电脑已有；缺少时安装 Evergreen Runtime。
@@ -45,11 +49,25 @@
 
 ### 02 · 导入音乐，选择版本
 
-点击 **选择音乐**，指定输出目录。保持 **自动配置**，先选择 Minecraft 版本范围和具体版本，再明确选择 **纯原版音符盒 / ENB 模组音符盒**。软件只自动安排节拍和布局，不会替你切换制作版本。自动体积搜索只限制可调的水平、三维比例，不设置固定长宽高或听音半径上限；搜索规模随歌曲调整，并不保证全局最优。高密度毒曲仍使用独立的长轨模式。
+点击 **选择音乐**，指定输出目录。NBS、MIDI 可直接转换；音频会显示「AI音频扒谱」，默认 Small，中、大模型可手动准备。保持 **自动配置**，先选择 Minecraft 版本范围和具体版本，再明确选择 **纯原版音符盒 / ENB 模组音符盒**。软件只自动安排节拍和布局，不会替你切换制作版本。自动体积搜索只限制可调的水平、三维比例，不设置固定长宽高或听音半径上限；搜索规模随歌曲调整，并不保证全局最优。高密度毒曲仍使用独立的长轨模式。
 
-**MIDI 可直接转为原版或模组音符盒。**参考 Open Note Block Studio 的乐器映射，26.1+ 另外适配四种铜块铜管音色，自动比较 10t / 20t，并在允许范围内调整 BPM。纯原版保留乐器、音高与起音；超出两八度可自行选择折叠。ENB 模组版另外读取 Note Off、延音踏板和力度，并提供逐音符 MIDI 自适应包络及手动统一淡入淡出。持续时间与包络需要 **26.x 配套 ENB**；本包附带 port.4，支持相位对齐延音并修复自然尾音试听。无法精确对齐时会显示量化误差；沙子底座小鼓始终使用自然尾音。见 [MIDI 导入说明](docs/midi.md)。
+**MIDI 可直接转为原版或模组音符盒。**参考 Open Note Block Studio 的乐器映射，26.1+ 另外适配四种铜块铜管音色，自动比较 10t / 20t，并在允许范围内调整 BPM；默认低误差时优先紧凑 10t，也可选择精度优先或固定档位。纯原版保留乐器、音高与起音；超出两八度可自行选择折叠。ENB 模组版另外读取 Note Off、延音踏板和力度，并提供逐音符 MIDI 自适应包络及手动统一淡入淡出。持续时间与包络需要 **26.x 配套 ENB**；本包附带 port.4，支持相位对齐延音并修复自然尾音试听。无法精确对齐时会显示量化误差；沙子底座小鼓始终使用自然尾音。见 [MIDI 导入说明](docs/midi.md)。
 
 ![导入音乐与版本选择，毛玻璃界面](docs/images/import.png)
+
+#### 使用 AI音频扒谱
+
+选择 MP3、WAV 等音频后，界面会显示 **AI音频扒谱**。先选模型，再点击“准备所选模型”安装独立运行库；准备完成后点“开始转换”，软件会先保存转录 MIDI，再搜索红石投影。
+
+| 模型选项 | 准备方式 |
+| :--- | :--- |
+| **Small-0.1b-默认-低级** | 原始权重随便携包提供，默认使用；首次仍需安装运行库 |
+| **Medium-0.3b-1.5G显存-中级(手动下载)** | 在对应模型页面授权，再主动下载，或选择已有本地目录 |
+| **Large-1.4b-6.1G显存-高级(手动下载)** | 在对应模型页面授权，再主动下载，或选择已有本地目录 |
+
+![AI音频扒谱的模型、设备与本地下载设置，毛玻璃界面](docs/images/ai-audio.png)
+
+默认探测 NVIDIA GPU，不能使用 CUDA 或显存不足时自动回退 CPU。显存数字为参考值；Medium / Large 尚未做本机整模型转录测试。转录不识别真实逐音符力度，复杂混音也可能出现错音、漏音，应先试听输出的 MIDI。Small 权重采用 CC BY-NC 4.0，与软件本体的 AGPL 许可分别适用；下载、授权和代理说明见 [AI音频扒谱说明](docs/audio.md)。
 
 自动识别会解释时序和所选制作版本的限制：
 
@@ -62,6 +80,7 @@
 | 超过 20,000 音符，或同时发声超过 136 音 | 自动切换毒曲模式 |
 | NBS 节奏无法精确落在游戏刻上 | 明确提示；是否近似由你在手动配置决定 |
 | MIDI 节拍不能直接对齐 | 默认允许 ±10% 整体变速；仍无法对齐时报告量化误差 |
+| MIDI / 音频的起音影响很小 | 优先紧凑 10t；密集快音保留 20t，可自行选择精度优先或固定档位 |
 
 ### 03 · 开始搜索，导出方案
 
@@ -153,6 +172,8 @@ GPU 需要兼容的 NVIDIA 显卡与驱动；**不是所有 NVIDIA 型号都保�
 | **Emil Kowalski · [Design Engineering Skills](https://github.com/emilkowalski/skills)** | 界面层次、交互反馈与动效节奏的设计参考。 |
 | **Paidax01 · [Math Curve Loaders / Rose Four](https://paidax01.github.io/math-curve-loaders/)** | 搜索与加载的数学曲线动画参考；本项目使用独立 Canvas 实现。 |
 | **maruohon、sakura-ryoko 与 Litematica / MaLiLib 贡献者** | 投影生态与格式兼容参考；[上游项目](https://github.com/maruohon/litematica) · [维护分支](https://github.com/sakura-ryoko/litematica)。 |
+| **Kyutai、Mirelo 与 [MuScriptor 作者](https://github.com/muscriptor/muscriptor)** | 可选 AI音频扒谱；代码 MIT，模型权重 CC BY-NC 4.0。Small 保留原始权重、模型卡与许可；Medium / Large 由用户自行安装。 |
+| **[CPJKU / Beat This!](https://github.com/CPJKU/beat_this) 贡献者** | 音频节拍检测辅助模型，代码与已发布权重为 MIT；随包保留来源与校验值。 |
 | **Open Note Block Studio 社区与 u3002** | NBS 音乐格式、GM 乐器与打击乐映射；[项目地址](https://github.com/OpenNBS/NoteBlockStudio) · [映射来源](https://github.com/OpenNBS/NoteBlockStudio/blob/79b22ad890631a39196d45b9c27881599f9b04ab/scripts/midi_instruments/midi_instruments.gml)。映射表保留 [MIT 许可](docs/OpenNBS-MIT.txt)。 |
 | **Etho、Xisuma 与红石创作者社区** | 漏斗计时、可平铺模块、音乐机存储与发声分离等结构研究参考。 |
 | **pywebview、Node.js、Python、Fabric、exp4j 等贡献者** | 桌面窗口、运行时、模组加载与表达式计算等基础组件。 |

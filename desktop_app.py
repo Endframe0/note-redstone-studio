@@ -11,19 +11,21 @@ from collections import deque
 from pathlib import Path
 
 from profiles import settings_path, read_settings, write_settings
+import desktop_audio as audio
 from desktop_options import (BASE, SUPPORTS, BUDGETS, SOUND_ENGINES, SOUND_HINTS,
     HORIZONTAL_OPTIONS, SPACE_OPTIONS, RADIUS_OPTIONS, make_options, VERSIONS)
 
-VERSION = '2.11.6'
+VERSION = '2.12.3'
 DEFAULTS = dict(adaptive=True, objective='体积优先', target='26.1.2', budget='持续优化 · 手动导出',
     support='圆石', speed='1', pitch='严格保留', timing='严格保留', transpose='0',
-    auto_sound='纯原版音符盒',auto_pitch='严格保留',
+    auto_sound='纯原版音符盒',auto_pitch='原版智能八度（保留音级）',
+    audio_device='自动（优先 NVIDIA GPU）',audio_home=audio.default_home(),audio_model=audio.MODEL_LABELS[0],audio_model_dir='',
     sound_engine='原版音符盒', threads=str(min(os.cpu_count() or 1, 32)),
     aspect='长边最多比短边长 50%', spatial_aspect='最长边最多是最短边的 2 倍',
     listening_radius='40 格', backend='CPU 多核', max_tracks='8',
-    midi_timing='节拍适配（小幅变速）',midi_speed_tolerance='10',midi_envelope='MIDI 自适应包络',midi_fade_in='0',midi_fade_out='50',
+    midi_timing='节拍适配（小幅变速）',midi_resolution='紧凑优先（低误差时用 10t）',midi_speed_tolerance='10',midi_envelope='MIDI 自适应包络',midi_fade_in='0',midi_fade_out='50',
     auto_start_wiring=True, heavy_core=False, limit_0='80', limit_1='80', limit_2='48')
-CHOICES = dict(midi_timing=['节拍适配（小幅变速）','保持原速（允许量化）','严格原速（不可量化）'],midi_speed_tolerance=['0','1','3','5','10','15','20','25'],midi_envelope=['MIDI 自适应包络','按设置淡入淡出','不使用淡入淡出'],objective=['体积优先', '极限省材（强制乐句复用）', '毒曲（宽高 ≤100，自动跟随）'],
+CHOICES = dict(midi_resolution=['紧凑优先（低误差时用 10t）','精度优先（自动 10t / 20t）','固定 10t','固定 20t'],midi_timing=['节拍适配（小幅变速）','保持原速（允许量化）','严格原速（不可量化）'],midi_speed_tolerance=['0','1','3','5','10','15','20','25'],midi_envelope=['MIDI 自适应包络','按设置淡入淡出','不使用淡入淡出'],objective=['体积优先', '极限省材（强制乐句复用）', '毒曲（宽高 ≤100，自动跟随）'],
     target=[v['id'] for v in VERSIONS], budget=list(BUDGETS), support=list(SUPPORTS), speed=['1','0.5','2'],
     pitch=['严格保留','八度折叠 / 半音取整'],
     timing=['严格保留','最近红石刻（±50 ms）','20t 严格保留（实验）','20t 最近游戏刻（±25 ms）','自动识别（严格保留）'],
@@ -31,6 +33,9 @@ CHOICES = dict(midi_timing=['节拍适配（小幅变速）','保持原速（允
     spatial_aspect=list(SPACE_OPTIONS), listening_radius=list(RADIUS_OPTIONS),
     backend=['CPU 多核','CPU + NVIDIA GPU'], max_tracks=['1','2','3','4','6','8'])
 NUMERIC = dict(midi_fade_in=(0,20000),midi_fade_out=(0,20000),transpose=(-48,48), threads=(1,128), limit_0=(4,512), limit_1=(4,512), limit_2=(4,384))
+CHOICES['audio_device']=['自动（优先 NVIDIA GPU）','仅 CPU']
+CHOICES['audio_model']=audio.MODEL_LABELS
+for _key in ('pitch','auto_pitch'):CHOICES[_key].append('原版智能八度（保留音级）')
 LANES = {'material-reuse':'省材复用','ordinary':'普通布线','sand-packing':'层间压缩',
     'snare':'沙子独立音轨','reuse':'乐句复用','heavy-core':'沉重核心'}
 
@@ -41,6 +46,11 @@ def clean(values, strict=False):
         value = values.get(key, default)
         if key == 'objective' and isinstance(value,str) and value.startswith('毒曲'):
             value = CHOICES[key][2]
+        if key == 'audio_model' and isinstance(value,str):
+            # Keep existing Small / Medium / Large selections and saved slots
+            # when their display labels change.
+            try:value=audio.MODEL_LABELS[['small','medium','large'].index(audio.model_key(value))]
+            except ValueError:pass
         valid = True
         if key in CHOICES: valid = isinstance(value,str) and value in CHOICES[key]
         elif key in NUMERIC:
@@ -50,6 +60,8 @@ def clean(values, strict=False):
                 value = str(int(value))
             except (ValueError, TypeError): valid = False
         elif isinstance(default,bool): valid = isinstance(value,bool)
+        elif key=='audio_home':valid=isinstance(value,str) and bool(value.strip()) and len(value)<1000
+        elif key=='audio_model_dir':valid=isinstance(value,str) and len(value)<1000
         if not valid and strict: raise ValueError('设置无效：'+key)
         result[key] = value if valid else default
     return result
@@ -65,7 +77,7 @@ class DesktopAPI:
         paths = data.get('paths',{})
         if not isinstance(paths,dict):paths={}
         self._paths = {'input':str(paths.get('input','')), 'output':str(paths.get('output',Path.home()/'Desktop'/'NBS红石投影'))}
-        if len(sys.argv)>1 and sys.argv[1].lower().endswith(('.nbs','.mid','.midi')): self._paths['input']=sys.argv[1]
+        if len(sys.argv)>1 and (audio.is_audio(sys.argv[1]) or sys.argv[1].lower().endswith(('.nbs','.mid','.midi'))): self._paths['input']=sys.argv[1]
         saved = data.get('profiles',[])
         self._profiles=[]
         for i in range(5):
@@ -136,6 +148,10 @@ class DesktopAPI:
         """Runs off the UI thread; no settings mutations or layout search."""
         try:
             opt=make_options({**clean(values,strict=True),**paths})
+            if audio.is_audio(opt['input']):
+                audio.validate_local(values.get('audio_model_dir',''),values.get('audio_model'))
+                return {'ok':True,'audio':True,'runtime':audio.status(values.get('audio_home',audio.default_home()),BASE,audio.model_key(values.get('audio_model')),values.get('audio_model_dir','')),
+                    'message':'先由所选模型转录为 MIDI，再按所选原版 / ENB 配置生成投影。转录不识别逐音符力度。'}
             node=BASE/'runtime/node.exe'
             if not node.exists():node=Path('C:/Program Files/nodejs/node.exe')
             result=subprocess.run([str(node),str(BASE/'engine/adaptive.cjs')],input=json.dumps(opt),
@@ -149,7 +165,7 @@ class DesktopAPI:
     def pick(self, kind):
         import webview
         if kind=='input':
-            result=self._window.create_file_dialog(webview.FileDialog.OPEN,allow_multiple=False,file_types=('音乐文件 (*.nbs;*.mid;*.midi)','MIDI 文件 (*.mid;*.midi)','NBS 文件 (*.nbs)'))
+            result=self._window.create_file_dialog(webview.FileDialog.OPEN,allow_multiple=False,file_types=('音乐文件 (*.nbs;*.mid;*.midi;*.mp3;*.wav;*.flac;*.ogg;*.m4a;*.aif;*.aiff;*.opus)','音频文件 (*.mp3;*.wav;*.flac;*.ogg;*.m4a;*.aif;*.aiff;*.opus)','MIDI 文件 (*.mid;*.midi)','NBS 文件 (*.nbs)'))
         else:result=self._window.create_file_dialog(webview.FileDialog.FOLDER)
         return str(result[0]) if result else None
 
@@ -194,18 +210,40 @@ class DesktopAPI:
         self._sequence+=1
         self._events.append({'id':self._sequence,'phase':phase,'message':message,'time':time.strftime('%H:%M:%S')})
 
+    def audio_link(self,kind,model='small'):
+        links={'model':'https://huggingface.co/MuScriptor/muscriptor-'+audio.model_key(model),'tokens':'https://huggingface.co/settings/tokens'}
+        if kind not in links:return {'ok':False,'error':'未知链接'}
+        os.startfile(links[kind]);return {'ok':True}
+
+    def prepare_audio(self,values,token=None):
+        with self._lock:
+            if self._state['running']:return {'ok':False,'error':'请先完成或取消当前任务。'}
+            try:
+                v=clean(values,strict=True);self._values=v;self._persist()
+                audio.validate_local(v['audio_model_dir'],v['audio_model'])
+                self._cancel.clear();self._finish.clear();self._events.clear();self._report=None
+                self._state.update(phase='audio-setup',running=True,attempts=0,elapsed=0,best=None,lanes=[],notes=0,
+                    onsets=0,message='准备可选音频转录组件…',report=None,transcription=None,audioProgress=None)
+                opt={'audioAction':'login' if token else 'prepare','audioHome':v['audio_home'],
+                    'audioDevice':'cpu' if v['audio_device']=='仅 CPU' else 'auto','audioModel':audio.model_key(v['audio_model']),'audioModelDir':v['audio_model_dir']}
+                if token:opt['token']=token
+                self._started=time.monotonic();self._thread=threading.Thread(target=self._run,args=(opt,),daemon=True)
+                self._thread.start();return {'ok':True}
+            except Exception as error:return {'ok':False,'error':str(error)}
+
     def start(self, values, paths):
         with self._lock:
             if self._state['running']:return {'ok':False,'error':'已有转换正在进行。'}
             try:
                 v=clean(values,strict=True)
                 opt=make_options({**v,**paths})
+                opt.update(audioHome=v['audio_home'],audioDevice='cpu' if v['audio_device']=='仅 CPU' else 'auto',audioModel=audio.model_key(v['audio_model']),audioModelDir=v['audio_model_dir'])
                 self._values=v; self._paths={k:str(paths[k]) for k in ('input','output')}
                 self._persist()
                 self._cancel.clear();self._finish.clear();self._preview=None;self._preview_layers={};self._report=None
                 self._events.clear()
                 self._state.update(phase='reading',running=True,attempts=0,elapsed=0,best=None,lanes=[],
-                    notes=0,onsets=0,message='读取音乐，分析可用模板…',report=None)
+                    notes=0,onsets=0,message='读取音乐，分析可用模板…',report=None,transcription=None,audioProgress=None)
                 self._event('log','开始：'+opt['input'])
                 self._started=time.monotonic()
                 self._thread=threading.Thread(target=self._run,args=(opt,),daemon=True)
@@ -213,9 +251,61 @@ class DesktopAPI:
                 return {'ok':True}
             except Exception as error:return {'ok':False,'error':str(error)}
 
+    def _process(self,command,env=None,payload=None):
+        if self._cancel.is_set():raise RuntimeError('已取消。')
+        worker=subprocess.Popen(command,stdin=subprocess.PIPE if payload is not None else subprocess.DEVNULL,
+            stdout=subprocess.PIPE,stderr=subprocess.STDOUT,text=True,encoding='utf-8',errors='replace',
+            env=env,creationflags=getattr(subprocess,'CREATE_NO_WINDOW',0))
+        with self._lock:self._worker=worker
+        try:
+            if self._cancel.is_set():self._kill()
+            if payload is not None:
+                worker.stdin.write(json.dumps(payload,ensure_ascii=False));worker.stdin.close()
+            for line in worker.stdout:
+                try:
+                    event=json.loads(line)
+                    if not isinstance(event,dict):raise ValueError()
+                    self._consume(event)
+                except (ValueError,KeyError,TypeError):
+                    with self._lock:self._event('log',line.strip())
+            return worker.wait()
+        finally:
+            if worker.poll() is None:
+                self._kill();worker.wait(timeout=10)
+            with self._lock:
+                if self._worker is worker:self._worker=None
+
+    def _audio(self,opt,action):
+        home=opt['audioHome'];env=audio.environment(home)
+        audio.validate_local(opt.get('audioModelDir',''),opt.get('audioModel','small'))
+        if not audio.status(home)['installed']:
+            self._consume({'phase':'audio-setup','message':'安装 Small 可选组件；首次准备需下载运行库，完成后会复用。'})
+            for command in audio.setup_commands(home,BASE,opt['audioDevice']):
+                if self._process(command,env):raise RuntimeError('音频组件安装失败，见转换记录。')
+            (Path(home).expanduser().resolve()/'runtime-ready.json').write_text(json.dumps({'schema':2,'package':audio.PACKAGE,'tls':audio.TLS_PACKAGE}),encoding='utf-8')
+        model=opt.get('audioModel','small')
+        payload={'action':action,'home':home,'device':opt['audioDevice'],'model':model,'localModel':opt.get('audioModelDir',''),'bundledModel':str(audio.bundled_model(BASE,model)),'beatModel':str(audio.bundled_model(BASE,'small').parent/'beat-this/final0.ckpt')}
+        if action=='login':payload['token']=opt.pop('token')
+        if action=='transcribe':payload.update(input=opt['input'],output=opt['output'])
+        if self._process([str(audio.runtime(home)),str(BASE/'engine/audio_worker.py')],env,payload):
+            if self._state['phase']!='error':raise RuntimeError('音频转录未完成。')
+            raise RuntimeError(self._state['message'])
+        if self._cancel.is_set():raise RuntimeError('已取消。')
+
     def _run(self,opt):
         config=None;code=1
         try:
+            if opt.get('audioAction'):
+                self._audio(opt,opt['audioAction']);code=0;return
+            if audio.is_audio(opt['input']):
+                self._audio(opt,'transcribe')
+                transcription=self._state.get('transcription')
+                if not transcription:raise RuntimeError('转录结束但未返回 MIDI。')
+                opt['audioSource']={'input':opt['input'],**transcription}
+                opt.setdefault('name',Path(opt['input']).stem)
+                opt['input']=transcription['midi']
+                self._consume({'phase':'log','message':'已保存转录 MIDI，开始原版 / ENB 节拍适配与布局搜索。'})
+            for key in ('audioHome','audioDevice','audioModel','audioModelDir'):opt.pop(key,None)
             fd,stop=tempfile.mkstemp(suffix='.redstone-stop');os.close(fd);Path(stop).unlink()
             with self._lock:
                 self._stop_file=stop
@@ -225,17 +315,7 @@ class DesktopAPI:
                 json.dump(opt,f,ensure_ascii=False);config=f.name
             node=BASE/'runtime/node.exe'
             if not node.exists():node=Path('C:/Program Files/nodejs/node.exe')
-            self._worker=subprocess.Popen([str(node),str(BASE/'engine/cli.cjs'),config],stdout=subprocess.PIPE,
-                stderr=subprocess.STDOUT,text=True,encoding='utf-8',errors='replace',creationflags=getattr(subprocess,'CREATE_NO_WINDOW',0))
-            if self._cancel.is_set():self._kill()
-            for line in self._worker.stdout:
-                try:
-                    event=json.loads(line)
-                    if not isinstance(event,dict):raise ValueError()
-                    self._consume(event)
-                except (ValueError,KeyError,TypeError) as error:
-                    with self._lock:self._event('log',line.strip())
-            code=self._worker.wait()
+            code=self._process([str(node),str(BASE/'engine/cli.cjs'),config])
         except Exception as error:
             with self._lock:self._state.update(phase='error',message=str(error));self._event('error',str(error))
         finally:
@@ -247,13 +327,23 @@ class DesktopAPI:
                 self._state['wallElapsed']=time.monotonic()-self._started
                 if self._cancel.is_set():self._state.update(phase='cancelled',message='已取消，可以调整设置后重新开始。');self._event('log','转换已取消。')
                 elif code and self._state['phase']!='error':self._state.update(phase='error',message=f'进程退出，代码 {code}');self._event('error',self._state['message'])
-                elif not self._state['report'] and self._state['phase']!='error':self._state.update(phase='error',message='转换结束，但没有返回投影文件。')
+                elif not opt.get('audioAction') and not self._state['report'] and self._state['phase']!='error':self._state.update(phase='error',message='转换结束，但没有返回投影文件。')
 
     def _consume(self,event):
         phase=event.get('phase')
         with self._lock:
             s=self._state
-            if phase=='parsed':
+            if phase in ('audio-setup','audio-loading','audio-beats','audio-ready'):
+                s.update(phase=phase,message=event['message']);self._event('log',event['message'])
+            elif phase=='audio-progress':
+                done=int(event['completed']);total=int(event['total'])
+                s.update(phase='transcribing',audioProgress={'completed':done,'total':total},
+                    message=f'音频转录 · {done} / {total} 段；完成后统计最终 MIDI 音符')
+            elif phase=='audio-done':
+                s['notes']=int(event['notes'])
+                s['transcription']={k:event[k] for k in ('midi','folder','cached','notes')}
+                self._event('log',('复用已有转录：' if event['cached'] else '转录 MIDI 已保存：')+event['midi'])
+            elif phase=='parsed':
                 s.update(notes=event['notes'],onsets=event['events'],phase='searching',message='分析完成，正在寻找更好的布局…')
                 self._event('log',f"已读取 {event['notes']:,} 个音符 · {event['events']:,} 个时序单元")
                 for w in event.get('warnings',[]):self._event('warning',w)
@@ -333,6 +423,11 @@ class DesktopAPI:
         r=self._state['report'];path=Path(r['folder'] if r else self._paths['output'])
         if not path.is_dir():return {'ok':False,'error':'输出文件夹尚未生成。'}
         os.startfile(str(path));return {'ok':True}
+
+    def open_transcription(self):
+        t=self._state.get('transcription')
+        if not t or not Path(t['folder']).is_dir():return {'ok':False,'error':'尚未生成转录 MIDI。'}
+        os.startfile(t['folder']);return {'ok':True}
 
     def _close(self):
         if self._allow_close:return True

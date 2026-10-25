@@ -21,7 +21,8 @@ node engine/cli.cjs your-config.json
 
 1. 下载对应 Release，完整解压。从其中的 `_internal/runtime` 复制运行时到项目 `runtime/`，保留 Node、GPU/NVRTC 及许可证文件。
 2. 把发行包的 `配套模组` 复制到项目 `companion/配套模组`。这些二进制依赖不进入 Git 历史。
-3. 激活虚拟环境，确认 `python` 和 `node` 在 PATH，执行 `powershell -ExecutionPolicy Bypass -File build.ps1`。
+3. 将发行包 `_internal/runtime/uv.exe` 保留在 `runtime/`；如需附带 Small 与节拍模型，把发行包 `模型/muscriptor-small`、`模型/beat-this` 复制到项目 `models/` 对应目录，保留所有许可与来源文件。模型不进入 Git 历史；Medium / Large 不随包分发。
+4. 激活虚拟环境，确认 `python` 和 `node` 在 PATH，执行 `powershell -ExecutionPolicy Bypass -File build.ps1`。
 
 `-RebuildGpu` 可重新编译 Python GPU 辅助进程；CUDA 核心在 `engine/gpu-kernel.cu`。NVRTC 运行库按 NVIDIA 自身许可分发，主项目许可证不覆盖它。
 
@@ -41,6 +42,11 @@ node tests/midi-quiet-tail.cjs
 node tests/midi-timing-fit.cjs
 node tests/midi-snare-natural.cjs
 node tests/nbs-natural.cjs
+node tests/midi-compact-timing.cjs
+node tests/midi-vanilla-fit.cjs
+node tests/phase-packing.cjs
+python tests/audio-bridge.py
+python tests/beat-support.py
 ```
 
 这些检查覆盖序列化、目标版本、时序与 ENB 字段；不代替 Minecraft 实机试听。
@@ -65,3 +71,7 @@ node tests/nbs-natural.cjs
 ```
 
 客户端和服务端都需要相同组合。此补丁不能代替官方 ENB。
+
+## AI音频扒谱运行库
+
+桌面核心不安装 PyTorch。通过界面的“准备所选模型”在单独目录安装 Python 3.12、MuScriptor 0.4.0 及音频依赖；GPU 默认探测 CUDA，失败时使用 CPU。安装说明、授权和模型来源见 [AI音频扒谱说明](audio.md)。`tests/audio-decode.py` 与 `tests/audio-gpu-fallback.py` 使用此独立运行库验证实际解码及 GPU 失败后的 CPU 重试。

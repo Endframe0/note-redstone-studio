@@ -3,9 +3,11 @@ const $=s=>document.querySelector(s), $$=s=>[...document.querySelectorAll(s)];
 const number=n=>Number(n||0).toLocaleString('zh-CN');
 const icon=id=>`<svg aria-hidden="true"><use href="#i-${id}"/></svg>`;
 const modes=['体积优先','极限省材（强制乐句复用）','毒曲（宽高 ≤100，自动跟随）'];
+const audioFile=path=>/\.(mp3|wav|flac|ogg|m4a|aiff?|opus)$/i.test(path||'');
 const fields={
  automatic:[["auto_sound","制作版本 · 由你选择"],["auto_pitch","超出音域时怎么办"]],
- midi:[['midi_timing','节奏处理'],['midi_speed_tolerance','允许速度调整（±%）'],['midi_envelope','音量包络'],['midi_fade_in','手动淡入（毫秒）'],['midi_fade_out','手动淡出（毫秒）']],
+ audio:[['audio_model','扒谱模型','显存数字为参考值，实际占用以运行情况为准。'],['audio_device','音频识别设备','先检查 CUDA；显卡不可用或显存不足时自动退回 CPU。'],['audio_model_dir','本地模型目录（可选）','自行下载后选择包含 model.safetensors 与 config.json 的目录；留空使用缓存或按需下载。'],['audio_home','可选组件目录','模型、运行库与下载缓存保存在这里，可选空间充足的磁盘。']],
+ midi:[['midi_resolution','时序与体积','默认低误差时优先 10t；密集快音保留 20t。也可手动选择精度或固定档位。'],['midi_timing','节奏处理'],['midi_speed_tolerance','允许速度调整（±%）'],['midi_envelope','音量包络'],['midi_fade_in','手动淡入（毫秒）'],['midi_fade_out','手动淡出（毫秒）']],
  primary:[['target','Java 版本'],['sound_engine','音域方案'],['support','结构支撑','不改变乐器底座'],['speed','播放速度']],
  shape:[['aspect','地面长宽差距','短边 40 格、允许长 50%，则长边最多 60 格。'],['spatial_aspect','整体长宽高比例','倍数越小，整体越接近方块。'],['listening_radius','中心听音半径','中心到最远角落的距离，不保证音量一致。']],
  music:[['timing','音乐时序'],['pitch','音高处理'],['transpose','移调','半音 · −48 至 48'],['max_tracks','并行线路上限']],
@@ -33,10 +35,11 @@ function renderAnalysis(){
  const r=analysisResult,s=r?.summary;
  const singleTempo=s?.sourceType==='midi'&&s.midi?.segments?.length===1?s.midi.segments[0]:null;
  const tempoText=singleTempo?`${Number(singleTempo.originalBpm.toFixed(3))}${Math.abs(singleTempo.actualBpm-singleTempo.originalBpm)>.0005?' → '+Number(singleTempo.actualBpm.toFixed(3)):''} BPM`:s?`${Number(s.tempo.toFixed(3))} ${s.sourceType==='midi'?'BPM':'tick/s'}`:'';
- $('#analysisTitle').textContent=analysisBusy?'正在识别这首音乐…':s?'已识别 · '+(s.objective==='toxic'?'密集音符布局':'紧凑红石布局'):r?.error?'需要调整后再转换':'等待选择音乐文件';
+ $('#analysisTitle').textContent=analysisBusy?'正在识别这首音乐…':r?.audio?'音频输入 · '+r.runtime.model:s?'已识别 · '+(s.objective==='toxic'?'密集音符布局':'紧凑红石布局'):r?.error?'需要调整后再转换':'等待选择音乐文件';
  $('#songAnalysis').classList.toggle('analysis-error',!!r?.error&&!analysisBusy);
  $('#analysisFacts').textContent=analysisBusy?'读取真实速度、音域和同时发声音符数，不进行布局搜索。':s?`${tempoText} · ${number(s.notes)} 个音符 · 最多 ${s.peak} 音同时发声 · 约 ${Math.ceil(s.durationSeconds)} 秒`:r?.error||'自动识别速度、音域和密度，不修改源文件。';
  $('#analysisDecisions').replaceChildren();
+ if(r?.audio&&!analysisBusy){$('#analysisFacts').textContent=r.runtime?.modelReady?'所选模型已就绪。开始转换后先转录，再搜索投影布局。':'首次使用：选择本地模型目录，或点击“准备所选模型”按需下载。Medium / Large 权重由你自行安装。';const li=document.createElement('li');li.textContent=r.message;$('#analysisDecisions').append(li);}
  if(s&&!analysisBusy&&values.adaptive!==false)$('#footerSub').textContent=(s.soundEngine==='extended'?'需要 ENB 模组 · ':'原版音符盒 · ')+s.timeResolution+'t · '+(s.sourceType==='midi'?(s.midi.exact?'节拍整刻对齐':s.midi.quantizedNotes>0?`${s.midi.quantizedNotes} 个音符需量化`:'有量化误差，见分析说明'):'原速播放');
  if(s&&!analysisBusy)for(const message of s.messages){const li=document.createElement('li');li.textContent=message;$('#analysisDecisions').append(li);}
 }
@@ -59,6 +62,7 @@ function field(key,label,hint){
  const box=document.createElement('div');box.className='field';const l=document.createElement('label');l.htmlFor=key;l.textContent=label;box.append(l);
  const control=document.createElement(choices[key]?'select':'input');control.id=key;control.dataset.setting=key;
  if(choices[key]){let group;for(const value of choices[key]){const o=new Option(value,value);if(key==='target'){const label=versionGroup(value);if(!group||group.label!==label){group=document.createElement('optgroup');group.label=label;control.append(group);}group.append(o);}else control.add(o);}}
+ else if(['audio_home','audio_model_dir'].includes(key)){control.type='text';control.spellcheck=false;}
  else{control.type='number';control.min=numeric[key][0];control.max=numeric[key][1];control.step='1';}
  box.append(control);if(hint){const p=document.createElement('small');p.textContent=hint;box.append(p);}return box;
 }
@@ -72,7 +76,7 @@ function buildFields(){
  }
  $$('[data-setting]').forEach(el=>{
   if(el.type==='number')el.addEventListener('input',()=>{if(el.value!==''&&el.validity.valid){values[el.dataset.setting]=el.value;saveSoon();}});
-  el.addEventListener('change',()=>{if(el.type==='number'&&!el.reportValidity())return;values[el.dataset.setting]=el.type==='checkbox'?el.checked:el.value;applyDependencies();saveSoon();scheduleAnalysis();});
+  el.addEventListener('change',()=>{if(el.type==='number'&&!el.reportValidity())return;if(el.dataset.setting==='audio_model'){values.audio_model_dir='';$('#audio_model_dir').value='';}values[el.dataset.setting]=el.type==='checkbox'?el.checked:el.value;applyDependencies();saveSoon();scheduleAnalysis();});
  });
 }
 function fill(){
@@ -80,8 +84,8 @@ function fill(){
  $('#inputPath').value=paths.input||'';$('#outputPath').value=paths.output||'';fileChanged();applyDependencies();renderProfiles();scheduleAnalysis();
 }
 function applyDependencies(){
- const automatic=values.adaptive!==false,isMidi=/\.midi?$/i.test(paths.input||'');
- $('#setupHint').textContent=isMidi?'MIDI 自动适配 10t / 20t 和布局，纯原版 / ENB 由你选择；速度调整与量化误差见分析说明。':'自动配置负责时序和布局，纯原版 / ENB 由你选择，程序不会自行切换。';
+ const automatic=values.adaptive!==false,isMidi=audioFile(paths.input)||/\.midi?$/i.test(paths.input||'');
+ $('#setupHint').textContent=isMidi?'MIDI / 音频低误差时优先紧凑 10t，快音保留 20t；时序策略可在“MIDI 时长与节拍”中调整，误差见分析说明。':'自动配置负责时序和布局，纯原版 / ENB 由你选择，程序不会自行切换。';
  document.body.classList.toggle('auto-setup',automatic);
  $('#automaticFields').hidden=$('#autoSoundHint').hidden=$('#autoShapeFields').hidden=!automatic;
  for(const id of ['aspect','spatial_aspect']){const parent=automatic?$('#autoShapeFields'):$('#shapeFields'),field=$('#'+id).parentElement;if(field.parentElement!==parent)parent.append(field);}
@@ -110,8 +114,10 @@ function applyDependencies(){
  $('#startBtn').disabled=state.running||!paths.input?.trim()||(values.adaptive!==false&&(analysisBusy||!analysisResult?.ok));
  for(const id of ['inputPath','outputPath','pickInput','pickOutput','profileSelect'])$('#'+id).disabled=state.running;
  $('#saveProfile').disabled=state.running||!selected;$('#renameProfile').disabled=state.running||!selected;
+ for(const id of ['prepareAudio','loginAudio','audioLicense','pickAudioModel'])$('#'+id).disabled=state.running;
+ $('#audioModelBadge').textContent=((values.audio_model||'Small').match(/^(Small|Medium|Large)/i)?.[1]||'Small')+' · 本地运行';
 }
-function fileChanged(){const file=(paths.input||'').split(/[\\/]/).pop();$('#fileName').textContent=file||'选择你的旋律';$('#fileName').title=file||'';$('#midiSettings').hidden=!/\.midi?$/i.test(file||'');$('#fileSub').textContent=file?(/\.midi?$/i.test(file)?'MIDI · 保留时长与力度':'NBS 音乐文件 · 准备转换'):'支持 NBS、MID 与 MIDI 文件';$('#footerSub').textContent=file||'选择音乐，设置将自动保存';}
+function fileChanged(){const file=(paths.input||'').split(/[\\/]/).pop(),isAudio=audioFile(file);$('#fileName').textContent=file||'选择你的旋律';$('#fileName').title=file||'';$('#audioSettings').hidden=!isAudio;$('#midiSettings').hidden=!(isAudio||/\.midi?$/i.test(file||''));$('#fileSub').textContent=file?(isAudio?'音频 → 模型转录 MIDI → 红石投影':/\.midi?$/i.test(file)?'MIDI · 节拍与音域适配':'NBS 音乐文件 · 准备转换'):'支持 NBS、MIDI、MP3 与 WAV 等音频';$('#footerSub').textContent=file||'选择音乐，设置将自动保存';}
 function saveSoon(){unsaved=true;revision++;clearTimeout(saveTimer);saveTimer=setTimeout(()=>persist(),220);}
 function persist(){
  clearTimeout(saveTimer);if(!initialized||!api)return Promise.resolve();
@@ -134,7 +140,7 @@ function theme(animate=false){
 function timeLabel(seconds){const s=Math.floor(seconds||0);return `${String(Math.floor(s/60)).padStart(2,'0')}:${String(s%60).padStart(2,'0')}`;}
 function updateState(next){
  const wasRunning=state.running;state=next;document.body.classList.toggle('running',state.running);document.body.classList.toggle('done',state.phase==='done');document.body.classList.toggle('error',state.phase==='error');
- const labels={idle:'待开始',reading:'读取中',searching:'搜索中',exporting:'导出中',done:'已完成',error:'出错了',cancelled:'已取消',cancelling:'取消中'};
+ const labels={idle:'待开始',reading:'读取中',searching:'搜索中',exporting:'导出中',done:'已完成',error:'出错了',cancelled:'已取消',cancelling:'取消中','audio-setup':'准备组件','audio-loading':'加载模型',transcribing:'音频转录','audio-beats':'识别节拍','audio-ready':'模型就绪'};
  $('#phasePill').textContent=labels[state.phase]||'处理中';$('#statusMessage').textContent=state.message;
  $('#noteMetric').textContent=state.notes?number(state.notes):'—';$('#attemptMetric').textContent=state.attempts?number(state.attempts):'—';
  $('#timeMetric').textContent=timeLabel(state.wallElapsed||state.elapsed);
@@ -144,6 +150,7 @@ function updateState(next){
  $('#cancelBtn').disabled=state.phase==='cancelling';$('#finishBtn').disabled=!state.best||['cancelling','exporting','error','done'].includes(state.phase);$('#finishBtn').title=state.best?'结束搜索，导出当前最优方案':'等待首个有效方案后可导出';
  $('#footerTitle').textContent=state.running?`${labels[state.phase]||'正在转换'} · ${timeLabel(state.wallElapsed||state.elapsed)}`:state.phase==='done'?'作品已生成':state.phase==='error'?'转换未完成':state.phase==='cancelled'?'已取消':'准备就绪';
  $('#openOutput').hidden=!state.report;
+ $('#openTranscription').hidden=!state.transcription;
  if(state.phase!==lastPhase||wasRunning!==state.running){
   lastPhase=state.phase;applyDependencies();
   $('#rose').hidden=!state.running;$('#idleArt').hidden=state.running;
@@ -152,6 +159,7 @@ function updateState(next){
   $('#stageTitle').textContent={reading:'先听懂，再折叠。',searching:'正在寻找更好的形状',exporting:'把这一刻的最优留下',done:'旋律，已经有了形状。',error:'这次需要调整一下',cancelled:'暂停探索，灵感还在。',cancelling:'正在收好这次探索'}[state.phase]||'下一件作品，从这里开始';
   $('#stageSub').textContent=state.running?'随时取消 · 有方案后可手动导出':state.phase==='done'?'投影与使用说明已保存到输出目录。':state.phase==='error'?'详细原因请查看下方转换记录。':'导入音乐，开始探索它的空间。';
  }
+ if(wasRunning&&!state.running&&audioFile(paths.input))scheduleAnalysis();
  if(state.report&&state.report.folder!==previewReport){previewReport=state.report.folder;loadLayer(2);toast('转换完成，投影已导出。');}
  if(!state.report&&previewReport){previewReport='';previewData=null;$('.preview-empty').hidden=false;$('#previewCanvas').hidden=true;$('#layerTools').hidden=true;}
 }
@@ -173,6 +181,15 @@ $$('[data-scroll]').forEach(b=>b.addEventListener('click',()=>{(b.dataset.scroll
 const observer=new IntersectionObserver(entries=>{for(const e of entries)if(e.isIntersecting)$$('[data-scroll]').forEach(b=>b.classList.toggle('active',b.dataset.scroll===e.target.id));},{root:$('#editor'),rootMargin:'-5% 0px -65% 0px',threshold:0});['music','setup','compute'].forEach(id=>observer.observe($('#'+id)));
 $('#inputPath').addEventListener('input',e=>{paths.input=e.target.value;fileChanged();scheduleAnalysis();applyDependencies();saveSoon();});$('#outputPath').addEventListener('input',e=>{paths.output=e.target.value;saveSoon();});
 for(const kind of ['Input','Output'])$('#pick'+kind).addEventListener('click',async()=>{try{const path=await call('pick',kind.toLowerCase());if(path){paths[kind.toLowerCase()]=path;fill();saveSoon();}}catch{}});
+$('#prepareAudio').addEventListener('click',async()=>{try{await persist();await call('prepare_audio',{...values});}catch{}});
+$('#loginAudio').addEventListener('click',()=>{$('#audioLoginDialog').showModal();$('#audioToken').focus();});
+$('#closeAudioLogin').addEventListener('click',()=>$('#audioLoginDialog').close());
+$('#audioLoginDialog').addEventListener('close',()=>{$('#audioToken').value='';});
+$('#audioLicense').addEventListener('click',()=>call('audio_link','model',values.audio_model).catch(()=>{}));
+$('#pickAudioModel').addEventListener('click',async()=>{try{const path=await call('pick','audioModel');if(path){values.audio_model_dir=path;$('#audio_model_dir').value=path;scheduleAnalysis();saveSoon();}}catch{}});
+$('#createAudioToken').addEventListener('click',()=>call('audio_link','tokens').catch(()=>{}));
+$('#openTranscription').addEventListener('click',()=>call('open_transcription').catch(()=>{}));
+$('#audioLoginForm').addEventListener('submit',async e=>{e.preventDefault();const token=$('#audioToken').value.trim();$('#audioToken').value='';$('#audioLoginDialog').close();try{await persist();await call('prepare_audio',{...values},token);}catch{}});
 function closeTheme(){ $('#fontOptions').hidden=true;$('#themeOptions').hidden=false;$('#fontMenuBtn').setAttribute('aria-expanded','false');$('#themeMenu').hidden=true;$('#themeBtn').setAttribute('aria-expanded','false'); }
 $('#themeBtn').addEventListener('click',()=>{const open=$('#themeMenu').hidden;$('#themeMenu').hidden=!open;$('#themeBtn').setAttribute('aria-expanded',String(open));if(open){const r=$('#themeBtn').getBoundingClientRect();$('#themeMenu').style.right=(innerWidth-r.right)+'px';$('#themeMenu').style.top=(r.bottom+10)+'px';$('#themeMenu [aria-checked="true"]').focus({preventScroll:true});}});
 $$('[data-theme-choice]').forEach(b=>b.addEventListener('click',()=>{appearance.theme=b.dataset.themeChoice;closeTheme();theme(true);saveSoon();$('#themeBtn').focus({preventScroll:true});}));

@@ -3,7 +3,7 @@ const fs=require('node:fs'),path=require('node:path'),os=require('node:os');
 const {Worker,MessageChannel,receiveMessageOnPort}=require('node:worker_threads');
 const {fits,aspect}=require('./objective.cjs');
 const {ProgressTotals}=require('./portfolio-progress.cjs');
-function searchPortfolio(song,opt,progress=()=>{}){
+function searchPortfolio(song,opt,progress=()=>{},hooks={}){
  const started=Date.now(),seconds=Number(opt.seconds??120);
  if(!Number.isFinite(seconds)||seconds<0||seconds>604800)throw Error('搜索总预算无效');
  const deadline=seconds?started+seconds*1000:Infinity;
@@ -29,6 +29,9 @@ function searchPortfolio(song,opt,progress=()=>{}){
   if(!m||!fits(m.dimensions,limits)||m.inputs.length>Number(opt.maxTracks??8)||!opt.heavyCore&&m.blocks.some(b=>b.block.split('[')[0]==='heavy_core'))return;
   // A reused circuit has its separate, explicitly limited component audit.
   if(m.hybridNetwork?!reuse?.recipe||!m.compositionChecks?.sourceEvents:!m.audit?.pass)return;
+  // Joint packers need alternatives with different dimensions, including a
+  // slightly larger component that makes the complete machine smaller.
+  hooks.onCandidate?.(m);
   if(best&&(m.volume>best.volume||m.volume===best.volume&&m.blocks.length>=best.blocks.length))return;
   best=m;reuseResult=reuse;firstVolume??=m.volume;stats.improvements++;save();
   for(const j of jobs)if(!j.done)j.port.postMessage({type:'elite',manifest:m});

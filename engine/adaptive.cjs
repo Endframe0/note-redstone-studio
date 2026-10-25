@@ -27,7 +27,7 @@ function plan(raw,options={}){
   require('./versions.cjs').get(opt.target);
  }
  if(raw.sourceType==='midi'){
-  opt.midiPlan=require('./midi-timing.cjs').plan(raw,{...opt,midiAutoResolution:true});opt.timeResolution=opt.midiPlan.resolution;opt.timing=opt.midiPlan.exact?'strict':'quantize';
+  opt.midiPlan=require('./midi-timing.cjs').plan(raw,{...opt,midiAutoResolution:opt.midiAutoResolution!==false});opt.timeResolution=opt.midiPlan.resolution;opt.timing=opt.midiPlan.exact?'strict':'quantize';
   if(opt.soundEngine==='extended'&&require('./versions.cjs').get(opt.target).enb!=='port')throw Error('MIDI 时长与淡入淡出需要配套 26.x ENB 移植版；也可以选择纯原版音符盒，不保留独立时长与渐变。');
   messages.push(...require('./midi-timing.cjs').messages(opt.midiPlan));
  }else if(opt.timing==='auto'){
@@ -47,6 +47,7 @@ function plan(raw,options={}){
  }
  // Normalize once for early validation (microtones/custom instruments included).
  const song=require('./normalize.cjs').normalize(raw,opt);
+ if(song.midiConversion?.vanillaFit){const r=song.midiConversion.vanillaFit;opt.midiPlan={...opt.midiPlan,vanillaFit:r};messages.push(`原版智能八度：${r.shiftedTracks} 条分部整体调整八度，${r.residualFoldedNotes} 个剩余越界音符折叠；共 ${r.pitchAdjustedNotes} 个音符改变八度，保留音级，不改变起音。`);}
  if(song.midiConversion?.envelope.naturalSnareNotes)messages.push(`其中 ${song.midiConversion.envelope.naturalSnareNotes} 个沙子底座小鼓使用原版自然尾音，不应用 MIDI 时长和音量包络。`);
  if(automatic&&opt.objective==='volume')Object.assign(opt,require('./automatic-space.cjs').domain(song,opt));
  return {options:opt,summary:{sourceType:raw.sourceType||'nbs',midi:opt.midiPlan||null,tempo:raw.sourceType==='midi'?60e6/raw.midi.tempo[0].us:raw.tempo,notes:notes.length,onsets:counts.size,peak,durationSeconds:song.midiConversion?.durationSeconds??duration,keyRange:[low,high],timeResolution:Number(opt.timeResolution??10),timing:opt.timing||'strict',soundEngine:opt.soundEngine||'vanilla',objective:opt.objective||'volume',seconds:opt.seconds,messages,warnings:song.warnings}};

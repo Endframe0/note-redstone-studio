@@ -14,9 +14,9 @@ if ($LASTEXITCODE -ne 0) { throw 'GPU helper build failed' }
 New-Item -ItemType Directory -Force -Path '.\runtime\gpu' | Out-Null
 Copy-Item -Path '.\dist\gpu_backend\*' -Destination '.\runtime\gpu' -Recurse -Force
 }
-& $converterPython -m PyInstaller --noconfirm --clean --windowed --onedir --distpath $DistPath --name '音符工坊2.11.6' --icon 'desktop/studio.ico' --version-file 'desktop/version-info.txt' --add-data 'engine;engine' --add-data 'runtime;runtime' --add-data 'desktop;desktop' --add-data 'README-2.9.md;.' --collect-data webview --copy-metadata pywebview desktop_app.py
+& $converterPython -m PyInstaller --noconfirm --clean --windowed --onedir --distpath $DistPath --name '音符工坊2.12.3' --icon 'desktop/studio.ico' --version-file 'desktop/version-info.txt' --add-data 'engine;engine' --add-data 'runtime;runtime' --add-data 'desktop;desktop' --add-data 'README-2.9.md;.' --collect-data webview --copy-metadata pywebview desktop_app.py
 if ($LASTEXITCODE -ne 0) { throw 'PyInstaller failed' }
-$converterRelease = Join-Path $DistPath '音符工坊2.11.6'
+$converterRelease = Join-Path $DistPath '音符工坊2.12.3'
 Copy-Item -LiteralPath '.\README.md' -Destination (Join-Path $converterRelease '使用说明.md')
 Copy-Item -LiteralPath '.\README-2.9.md' -Destination (Join-Path $converterRelease '新版界面说明.md')
 
@@ -28,3 +28,17 @@ Copy-Item -LiteralPath '.\LICENSE','.\THIRD_PARTY_NOTICES.md' -Destination $conv
 New-Item -ItemType Directory -Force -Path (Join-Path $converterRelease 'docs') | Out-Null
 Copy-Item -LiteralPath '.\docs\compatibility.md','.\docs\development.md','.\docs\midi.md','.\docs\OpenNBS-MIT.txt' -Destination (Join-Path $converterRelease 'docs') -Force
 Copy-Item -LiteralPath '.\docs\images' -Destination (Join-Path $converterRelease 'docs') -Recurse -Force
+
+Copy-Item -LiteralPath '.\docs\audio.md','.\docs\MuScriptor-MIT.txt','.\docs\uv-LICENSE-MIT.txt','.\docs\uv-LICENSE-APACHE.txt' -Destination (Join-Path $converterRelease 'docs') -Force
+if (Test-Path -LiteralPath '.\models\muscriptor-small\model.safetensors') {
+    $converterModels = Join-Path $converterRelease '模型'
+    New-Item -ItemType Directory -Force -Path $converterModels | Out-Null
+    Copy-Item -LiteralPath '.\models\muscriptor-small' -Destination $converterModels -Recurse -Force
+}
+if (Test-Path -LiteralPath '.\models\beat-this\final0.ckpt') {
+    $converterModels = Join-Path $converterRelease '模型'
+    New-Item -ItemType Directory -Force -Path $converterModels | Out-Null
+    Copy-Item -LiteralPath '.\models\beat-this' -Destination $converterModels -Recurse -Force
+}
+Copy-Item -LiteralPath '.\docs\truststore-MIT.txt' -Destination (Join-Path $converterRelease 'docs') -Force
+Copy-Item -LiteralPath '.\docs\imageio-ffmpeg-BSD.txt' -Destination (Join-Path $converterRelease 'docs') -Force

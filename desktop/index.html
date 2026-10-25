@@ -40,18 +40,17 @@
    <button class="nav-item" id="showLog"><svg><use href="#i-file"/></svg>转换记录<span id="logCount">0</span></button>
   </nav>
   <div class="sidebar-note"><span class="tiny-symbol">♪</span><p>让每一段旋律<br>都有自己的形状。</p><div class="note-rule"></div><small>音乐 → 电路 → 世界</small></div>
-  <div class="sidebar-bottom"><div class="online"><span></span>本地运行 · 无需联网</div><div class="version">DESKTOP <b id="version">2.11.6</b></div><button id="aboutBtn" class="text-button">关于与设计致谢 ↗</button></div>
+  <div class="sidebar-bottom"><div class="online"><span></span>音乐本地处理</div><div class="version">DESKTOP <b id="version">2.12.3</b></div><button id="aboutBtn" class="text-button">关于与设计致谢 ↗</button></div>
  </aside>
  <header class="topbar" id="windowTitlebar" title="拖动窗口 · 双击最大化"><div class="title-drag" title="拖动窗口 · 双击最大化"><div class="breadcrumb">工作空间 <span>/</span> <strong>新建转换</strong></div></div><div class="top-actions"><button class="theme-toggle" id="themeBtn" aria-label="选择外观主题" aria-haspopup="menu" aria-expanded="false"><svg id="themeIcon"><use href="#i-glass"/></svg><span id="themeLabel">浮光</span></button></div></header>
  <main class="workspace">
   <div class="editor" id="editor">
-   <div class="hero"><div><div class="eyebrow"><span></span> MUSIC INTO MATTER</div><h1>把音乐，<em>折叠成红石。</em></h1><p>从 NBS 或 MIDI 文件开始，找到旋律在方块里的形状。</p></div><div class="hero-glyph" aria-hidden="true"><svg><use href="#i-cube"/></svg><span>♫</span></div></div>
-   <section class="panel source-panel" id="music"><div class="section-head"><h2><span class="step">01</span> 音乐与输出</h2><span class="micro-label">.NBS / .MID → .LITEMATIC</span></div>
-    <div class="source-card" id="sourceCard"><div class="file-emblem"><svg><use href="#i-wave"/></svg></div><div class="file-info"><strong id="fileName">选择你的旋律</strong><span id="fileSub">支持 NBS、MID 与 MIDI 文件</span></div><button class="button" id="pickInput">选择音乐 <svg><use href="#i-folder"/></svg></button></div>
-    <div class="path-edit"><label for="inputPath">文件路径</label><input id="inputPath" type="text" placeholder="也可以在这里粘贴 NBS 或 MIDI 文件路径" spellcheck="false"></div>
+   <div class="hero"><div><div class="eyebrow"><span></span> MUSIC INTO MATTER</div><h1>把音乐，<em>折叠成红石。</em></h1><p>从 NBS、MIDI 或音频开始，找到旋律在方块里的形状。</p></div><div class="hero-glyph" aria-hidden="true"><svg><use href="#i-cube"/></svg><span>♫</span></div></div>
+   <section class="panel source-panel" id="music"><div class="section-head"><h2><span class="step">01</span> 音乐与输出</h2><span class="micro-label">.NBS / .MID / AUDIO → .LITEMATIC</span></div>
+    <div class="source-card" id="sourceCard"><div class="file-emblem"><svg><use href="#i-wave"/></svg></div><div class="file-info"><strong id="fileName">选择你的旋律</strong><span id="fileSub">支持 NBS、MIDI、MP3 与 WAV 等音频</span></div><button class="button" id="pickInput">选择音乐 <svg><use href="#i-folder"/></svg></button></div>
+    <div class="path-edit"><label for="inputPath">文件路径</label><input id="inputPath" type="text" placeholder="也可以在这里粘贴音乐文件路径" spellcheck="false"></div>
     <div class="output-row"><label for="outputPath"><svg><use href="#i-folder"/></svg>输出到</label><input id="outputPath" type="text" spellcheck="false"><button class="icon-button" id="pickOutput" aria-label="更改输出目录" title="更改输出目录"><svg><use href="#i-chevron"/></svg></button></div>
    </section>
-   <details class="panel disclosure" id="midiSettings" hidden><summary><div><strong>MIDI 时长与节拍</strong><small>自动选择 10t / 20t · 读取 Note Off 和延音踏板</small></div><svg><use href="#i-chevron"/></svg></summary><div class="disclosure-body"><div class="field-grid" id="midiFields"></div><p class="help">自适应包络优先参考 MIDI 控制器，每个音符独立生成；缺失部分按乐器推算；最终衰减尾音低于 0.11 后，在最多 250 ms 内平滑归零。保留起音淡入与后续渐强。沙子底座小鼓始终使用原版自然尾音，不应用包络。管乐与簧片音色的 CC2 按音量近似处理，不保证复原原音源。手动统一设置继续可用，毫秒值仅在“按设置淡入淡出”时生效。包络以 50 ms 游戏刻记录，仅用于 26.x ENB；原版不应用。</p></div></details>
    <section class="panel setup-panel" id="setup">
     <div class="section-head"><h2><span class="step">02</span> 转换方式</h2><span class="badge">选好音乐，就能开始</span></div>
     <div class="setup-switch" role="group" aria-label="转换方式"><button id="autoSetup" aria-pressed="true">自动配置 <small>按歌曲选择，适合直接使用</small></button><button id="manualSetup" aria-pressed="false">手动配置 <small>保留全部参数与配置槽</small></button></div>
@@ -59,6 +58,14 @@
     <div class="field-grid" id="automaticFields"></div><div class="field-grid" id="autoShapeFields" style="margin-top:16px"></div><p class="help" id="autoSoundHint"></p>
     <div id="songAnalysis" class="song-analysis" role="status" aria-live="polite"><canvas id="analysisRose" width="100" height="100" aria-label="Rose Four 文件识别动画" hidden></canvas><strong id="analysisTitle">等待选择音乐文件</strong><p id="analysisFacts">自动识别速度、音域和密度，不修改源文件。</p><ul id="analysisDecisions"></ul></div>
     <p class="help" id="setupHint">自动配置保持原曲速度和音高；需要模组时会在这里提示。手动参数独立保留。</p>
+   </section>
+   <details class="panel disclosure" id="midiSettings" hidden><summary><div><strong>MIDI 时长与节拍</strong><small>低误差优先 10t · 密集快音保留 20t · 可手动选择</small></div><svg><use href="#i-chevron"/></svg></summary><div class="disclosure-body"><div class="field-grid" id="midiFields"></div><p class="help">自适应包络优先参考 MIDI 控制器，每个音符独立生成；缺失部分按乐器推算；最终衰减尾音低于 0.11 后，在最多 250 ms 内平滑归零。保留起音淡入与后续渐强。沙子底座小鼓始终使用原版自然尾音，不应用包络。管乐与簧片音色的 CC2 按音量近似处理，不保证复原原音源。手动统一设置继续可用，毫秒值仅在“按设置淡入淡出”时生效。包络以 50 ms 游戏刻记录，仅用于 26.x ENB；原版不应用。</p></div></details>
+   <section class="panel" id="audioSettings" hidden>
+    <div class="section-head"><h2><span class="step">AI</span> AI音频扒谱</h2><span class="badge" id="audioModelBadge">Small · 本地运行</span></div>
+    <p class="help">先识别音高、乐器与起止时间，再生成红石投影。MuScriptor 不识别逐音符力度；原版模式按自然音色播放。转录 MIDI 单独保存，重试布局时可直接复用。</p>
+    <div class="field-grid" id="audioFields"></div>
+    <div class="dialog-actions" style="flex-wrap:wrap;justify-content:flex-start"><button class="button" id="prepareAudio">准备所选模型</button><button class="button" id="pickAudioModel">选择本地模型</button><button class="button" id="loginAudio">登录 Hugging Face</button><button class="text-button" id="audioLicense">模型授权页面</button><button class="text-button" id="openTranscription" hidden>打开转录 MIDI 文件夹</button></div>
+    <p class="help">Small 随便携包提供；Medium / Large 由你手动下载。首次需准备可选运行库；模型可从本地目录读取，或在 Hugging Face 授权后按需下载。权重采用 CC BY-NC 4.0，运行库与模型缓存独立保存。</p>
    </section>
    <section class="panel" id="layout"><div class="section-head"><h2><span class="step">02</span> 布局与压缩</h2><span class="badge">多模板共同搜索</span></div>
     <div class="mode-picker" role="group" aria-label="优化目标"><span class="mode-indicator"></span>
@@ -99,7 +106,8 @@
 <div class="resize-handles" aria-hidden="true"><div data-edge="left"></div><div data-edge="right"></div><div data-edge="top"></div><div data-edge="bottom"></div><div data-edge="top-left"></div><div data-edge="top-right"></div><div data-edge="bottom-left"></div><div data-edge="bottom-right"></div></div>
 <div class="toast" id="toast" role="status" aria-live="polite"></div>
 <dialog id="renameDialog"><form method="dialog"><div class="dialog-head"><h2>给配置起个名字</h2><button class="icon-button" value="cancel" aria-label="关闭"><svg><use href="#i-close"/></svg></button></div><p>下次选择它，就能载入这一组设置。</p><label for="profileName">配置名称</label><input id="profileName" maxlength="24" required autocomplete="off"><div class="dialog-actions"><button class="button" value="cancel" formnovalidate>取消</button><button class="button primary" id="confirmRename" value="save">保存名称</button></div></form></dialog>
-<dialog id="aboutDialog"><div class="dialog-head"><h2>为旋律留一块空间。</h2><button class="icon-button" id="closeAbout" aria-label="关闭"><svg><use href="#i-close"/></svg></button></div><p id="aboutVersion">音符工坊 · Note Redstone Studio · 2.11.6</p><p>界面与动效参考 Emil Kowalski 的 Design Engineering。搜索动画基于 Paidax01 / Math Curve Loaders 的 Rose Four：r = a cos(4θ)。</p><p class="help">浅色「纸间」：中性灰白、压印与实体层叠。<br>深色「夜航」：黑灰面板、蓝色线条与仪表读数。<br>毛玻璃「浮光」：透光卡片、独立侧栏与悬浮操作条。<br>首次使用默认毛玻璃，之后记住上次主题。<br>在右上角可切换主题。动态效果跟随系统的减少动画偏好。</p><p class="help">原版音符盒不支持独立力度；ENB 模式会保存 NBS 音符力度 × 音轨音量，需要配套模组。输出目录内的说明包含各模式接线和使用要求。</p></dialog>
+<dialog id="aboutDialog"><div class="dialog-head"><h2>为旋律留一块空间。</h2><button class="icon-button" id="closeAbout" aria-label="关闭"><svg><use href="#i-close"/></svg></button></div><p id="aboutVersion">音符工坊 · Note Redstone Studio · 2.12.3</p><p>界面与动效参考 Emil Kowalski 的 Design Engineering。搜索动画基于 Paidax01 / Math Curve Loaders 的 Rose Four：r = a cos(4θ)。</p><p class="help">浅色「纸间」：中性灰白、压印与实体层叠。<br>深色「夜航」：黑灰面板、蓝色线条与仪表读数。<br>毛玻璃「浮光」：透光卡片、独立侧栏与悬浮操作条。<br>首次使用默认毛玻璃，之后记住上次主题。<br>在右上角可切换主题。动态效果跟随系统的减少动画偏好。</p><p class="help">原版音符盒不支持独立力度；ENB 模式会保存 NBS 音符力度 × 音轨音量，需要配套模组。输出目录内的说明包含各模式接线和使用要求。</p></dialog>
 <div id="boot" class="boot"><canvas id="bootRose" width="200" height="200"></canvas><strong>正在打开工作台</strong><small id="bootMessage">加载本地设置…</small></div>
+<dialog id="audioLoginDialog"><form id="audioLoginForm"><div class="dialog-head"><h2>登录 Hugging Face</h2><button type="button" class="icon-button" id="closeAudioLogin" aria-label="关闭"><svg><use href="#i-close"/></svg></button></div><p>先在所选模型页面接受授权，再输入具有模型读取权限的令牌。令牌由 Hugging Face 本机缓存管理，软件配置和便携包不会保存它。</p><div class="field"><label for="audioToken">读取令牌</label><input id="audioToken" type="password" autocomplete="off" spellcheck="false" placeholder="hf_…" required></div><div class="dialog-actions"><button type="button" class="button" id="createAudioToken">获取令牌</button><button type="submit" class="button primary">登录并准备模型</button></div></form></dialog>
 <script src="rose-four.js"></script><script src="studio.js"></script>
 </body></html>
