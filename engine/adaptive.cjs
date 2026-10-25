@@ -6,7 +6,7 @@ function plan(raw,options={}){
  const opt={...options},automatic=opt.adaptive===true,messages=[];
  if(automatic)Object.assign(opt,{speed:1,transpose:0,pitch:opt.pitch||'strict',timing:'auto',soundEngine:opt.soundEngine||'vanilla',backend:'cpu',heavyCore:false,externalInputs:true,autoStartWiring:true,workers:Math.max(1,Math.min(16,require('node:os').availableParallelism())),maxTracks:8,unboundedSize:true,maxAspect:Number(options.maxAspect??1.5),maxSpatialAspect:Number(options.maxSpatialAspect??2),maxListeningRadius:0});
  if(opt.soundEngine==='auto')throw Error('请明确选择纯原版音符盒或 ENB 模组版；程序不再自动切换。');
- const notes=raw.notes.filter(n=>n.velocity!==0&&raw.layers[n.layer]?.volume!==0);
+ const notes=raw.notes.filter(n=>(n.velocity!==0||opt.soundEngine==='extended'&&opt.midiEnvelope==='adaptive'&&n.instrument!==3&&n.midiRawVelocity>0)&&raw.layers[n.layer]?.volume!==0);
  if(!notes.length)throw Error('文件没有可发声的音符。');
  const speed=Number(opt.speed??1),transpose=Number(opt.transpose??0),counts=new Map();
  let exact10=true,exact20=true,low=Infinity,high=-Infinity,velocity=false;
@@ -47,6 +47,7 @@ function plan(raw,options={}){
  }
  // Normalize once for early validation (microtones/custom instruments included).
  const song=require('./normalize.cjs').normalize(raw,opt);
+ if(song.midiConversion?.envelope.naturalSnareNotes)messages.push(`其中 ${song.midiConversion.envelope.naturalSnareNotes} 个沙子底座小鼓使用原版自然尾音，不应用 MIDI 时长和音量包络。`);
  if(automatic&&opt.objective==='volume')Object.assign(opt,require('./automatic-space.cjs').domain(song,opt));
  return {options:opt,summary:{sourceType:raw.sourceType||'nbs',midi:opt.midiPlan||null,tempo:raw.sourceType==='midi'?60e6/raw.midi.tempo[0].us:raw.tempo,notes:notes.length,onsets:counts.size,peak,durationSeconds:song.midiConversion?.durationSeconds??duration,keyRange:[low,high],timeResolution:Number(opt.timeResolution??10),timing:opt.timing||'strict',soundEngine:opt.soundEngine||'vanilla',objective:opt.objective||'volume',seconds:opt.seconds,messages,warnings:song.warnings}};
 }

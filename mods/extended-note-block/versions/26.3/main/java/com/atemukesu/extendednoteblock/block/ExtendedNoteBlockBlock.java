@@ -31,6 +31,8 @@ import com.mojang.serialization.MapCodec;
 
 public class ExtendedNoteBlockBlock extends BaseEntityBlock {
 
+    private static final java.util.concurrent.atomic.AtomicInteger playbackTraceCount = new java.util.concurrent.atomic.AtomicInteger();
+
     public static final EnumProperty<NotePitch> PITCH = EnumProperty.create("pitch", NotePitch.class);
 
     private static final ScheduledExecutorService scheduler = Executors.newSingleThreadScheduledExecutor(runnable -> {
@@ -69,6 +71,12 @@ public class ExtendedNoteBlockBlock extends BaseEntityBlock {
 
             // ============== Advanced Features v1.4.0 ==============
             // 检查是否启用了高级模式
+            // Bound diagnostics so dense scores do not flood the log.
+            if (playbackTraceCount.getAndIncrement() < 16) {
+                org.slf4j.LoggerFactory.getLogger("extendednoteblock.playback").info(
+                        "Server pos={} instrument={} note={} oneShot={} sustain={}", pos,
+                        blockEntity.getInstrumentId(), blockEntity.getNote(), blockEntity.isOneShot(), blockEntity.getSustain());
+            }
             if (blockEntity.isOneShot()) {
                 ServerSoundManager.playOneShot(serverWorld, pos, blockEntity.getInstrumentId(), blockEntity.getNote(), blockEntity.getVelocity());
             } else if (blockEntity.isAdvancedModeEnabled()) {
@@ -101,22 +109,9 @@ public class ExtendedNoteBlockBlock extends BaseEntityBlock {
     }
 
     public void previewNote(Level world, BlockPos pos) {
-        if (world.isClientSide() || !(world instanceof ServerLevel serverWorld)) {
-            return;
-        }
-        if (world.getBlockEntity(pos) instanceof ExtendedNoteBlockEntity blockEntity) {
-            // 粒子
-            double particleColor = (blockEntity.getNote() % 25) / 24.0D;
-            serverWorld.sendParticles(
-                    ParticleTypes.NOTE,
-                    pos.getX() + 0.5D,
-                    pos.getY() + 1.2D,
-                    pos.getZ() + 0.5D,
-                    0, particleColor, 0.0D, 0.0D, 1.0D);
-            // 预览：短暂的持续时间，没有淡入淡出
-            ServerSoundManager.playSound(serverWorld, pos, blockEntity.getInstrumentId(), blockEntity.getNote(),
-                    blockEntity.getVelocity(), 20, 0, 3);
-        }
+        // Preview the actual block policy, including one-shot and per-note envelopes.
+        // A fixed timed preview would stretch natural NBS samples after sustain was added.
+        triggerNote(world, pos);
     }
 
     @Override

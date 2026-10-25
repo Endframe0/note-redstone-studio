@@ -12,6 +12,6 @@ function enbVelocity(n){
  return v;
 }
 // Only normalized ENB songs include this field; vanilla reuse stays unchanged.
-const toneKey=n=>[n.instrument,n.key,n.enbVelocity??'',n.enbSustainTime??'',n.enbFadeInTime??'',n.enbFadeOutTime??''].join(':');
+const toneKey=n=>[n.instrument,n.key,n.enbVelocity??'',n.enbSustainTime??'',n.enbFadeInTime??'',n.enbFadeOutTime??'',n.enbVolumePoints?JSON.stringify(n.enbVolumePoints):''].join(':');
 const eventKey=n=>n.tick+'/'+toneKey(n);
 module.exports={toEnbVelocity,enbVelocity,toneKey,eventKey};

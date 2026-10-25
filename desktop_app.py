@@ -14,16 +14,16 @@ from profiles import settings_path, read_settings, write_settings
 from desktop_options import (BASE, SUPPORTS, BUDGETS, SOUND_ENGINES, SOUND_HINTS,
     HORIZONTAL_OPTIONS, SPACE_OPTIONS, RADIUS_OPTIONS, make_options, VERSIONS)
 
-VERSION = '2.11.2'
+VERSION = '2.11.6'
 DEFAULTS = dict(adaptive=True, objective='体积优先', target='26.1.2', budget='持续优化 · 手动导出',
     support='圆石', speed='1', pitch='严格保留', timing='严格保留', transpose='0',
     auto_sound='纯原版音符盒',auto_pitch='严格保留',
     sound_engine='原版音符盒', threads=str(min(os.cpu_count() or 1, 32)),
     aspect='长边最多比短边长 50%', spatial_aspect='最长边最多是最短边的 2 倍',
     listening_radius='40 格', backend='CPU 多核', max_tracks='8',
-    midi_timing='节拍适配（小幅变速）',midi_speed_tolerance='10',midi_envelope='按设置淡入淡出',midi_fade_in='0',midi_fade_out='50',
+    midi_timing='节拍适配（小幅变速）',midi_speed_tolerance='10',midi_envelope='MIDI 自适应包络',midi_fade_in='0',midi_fade_out='50',
     auto_start_wiring=True, heavy_core=False, limit_0='80', limit_1='80', limit_2='48')
-CHOICES = dict(midi_timing=['节拍适配（小幅变速）','保持原速（允许量化）','严格原速（不可量化）'],midi_speed_tolerance=['0','1','3','5','10','15','20','25'],midi_envelope=['按设置淡入淡出','不使用淡入淡出'],objective=['体积优先', '极限省材（强制乐句复用）', '毒曲（宽高 ≤100，自动跟随）'],
+CHOICES = dict(midi_timing=['节拍适配（小幅变速）','保持原速（允许量化）','严格原速（不可量化）'],midi_speed_tolerance=['0','1','3','5','10','15','20','25'],midi_envelope=['MIDI 自适应包络','按设置淡入淡出','不使用淡入淡出'],objective=['体积优先', '极限省材（强制乐句复用）', '毒曲（宽高 ≤100，自动跟随）'],
     target=[v['id'] for v in VERSIONS], budget=list(BUDGETS), support=list(SUPPORTS), speed=['1','0.5','2'],
     pitch=['严格保留','八度折叠 / 半音取整'],
     timing=['严格保留','最近红石刻（±50 ms）','20t 严格保留（实验）','20t 最近游戏刻（±25 ms）','自动识别（严格保留）'],

@@ -1,0 +1,10 @@
+'use strict';
+const assert=require('node:assert/strict'),fs=require('node:fs'),path=require('node:path');
+const dir=path.resolve('tests/output/nbs-natural');fs.mkdirSync(dir,{recursive:true});
+const input=path.join(dir,'natural.nbs');fs.writeFileSync(input,require('./enb-fixture.cjs').encode([{tick:0,layer:0,instrument:0,key:45},{tick:4,layer:0,instrument:6,key:57}]));
+const r=require('../engine/cli.cjs').convert({input,output:dir,target:'26.1.2',soundEngine:'extended',objective:'toxic',midiEnvelope:'adaptive'},()=>{});
+const blocks=JSON.parse(fs.readFileSync(path.join(r.folder,'扩展音符盒配置.json'))).blocks;
+assert.equal(blocks.length,2);assert(blocks.every(n=>n.oneShot&&!n.holdUntilRelease&&n.sustainTime===0&&n.fadeInTime===0&&n.fadeOutTime===0&&!n.volumePoints));
+assert(r.extendedNoteblock.naturalOneShot);assert(!r.extendedNoteblock.durationPreserved);
+fs.writeFileSync(path.join(dir,'verification.json'),JSON.stringify({schematic:r.schematic,blocks},null,2));
+console.log('PASS NBS natural playback: oneShot, no timed sustain or envelope, independent of MIDI mode');

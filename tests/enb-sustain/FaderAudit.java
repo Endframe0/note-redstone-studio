@@ -25,6 +25,15 @@ public class FaderAudit {
         }
         check(f.tick(),"release stops after fade duration, not sustain duration");
         f=note(80,0,0);f.tick();f.startFadeOut();check(f.tick(),"zero release is immediate");
+        f=note(25,10,10);
+        f.setVolumePoints(java.util.List.of(
+            new com.atemukesu.extendednoteblock.util.CurvePoint(0,0),
+            new com.atemukesu.extendednoteblock.util.CurvePoint(.5f,.8f),
+            new com.atemukesu.extendednoteblock.util.CurvePoint(1,0)));
+        check(f.calculateStateAt(0).volume==0,"independent curve starts silent");
+        check(Math.abs(f.calculateStateAt(.25f).volume-.4f)<1e-6,"independent curve interpolates");
+        check(Math.abs(f.calculateStateAt(.5f).volume-.8f)<1e-6,"curve overrides uniform envelope without double scaling");
+        check(f.calculateStateAt(1).volume==0,"independent release reaches zero");
         System.out.println("ENB_FADER_COMPLETE");
     }
 }

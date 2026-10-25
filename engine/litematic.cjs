@@ -53,7 +53,7 @@ function extendedNoteTags(m){
   if(!p||p.length!==3||!p.every(Number.isInteger)||p.some((v,i)=>v<0||v>=m.dimensions[i])||seen.has(k)||n.id!==ENTITY||!Number.isInteger(n.note)||n.note<0||n.note>127||occupied.get(k)!==`${BLOCK}[pitch=${PITCHES[n.note%12]},powered=false]`||!require('./normalize.cjs').names.includes(n.vanillaInstrument))throw Error('Invalid extended note block entity');
   seen.add(k);
   if(!Number.isInteger(n.velocity)||n.velocity<0||n.velocity>127)throw Error('Invalid extended note block velocity');
-  return {id:T.str(ENTITY),x:T.int(p[0]),y:T.int(p[1]),z:T.int(p[2]),note:T.int(n.note),vanillaInstrument:T.str(n.vanillaInstrument),velocity:T.int(n.velocity),sustainTime:T.int(n.sustainTime??40),delayedPlayingTime:T.int(n.delayedPlayingTime??0),fadeInTime:T.int(n.fadeInTime??0),fadeOutTime:T.int(n.fadeOutTime??0),holdUntilRelease:T.byte(n.holdUntilRelease?1:0),oneShot:T.byte(n.oneShot===false?0:1)};
+  return {id:T.str(ENTITY),x:T.int(p[0]),y:T.int(p[1]),z:T.int(p[2]),note:T.int(n.note),vanillaInstrument:T.str(n.vanillaInstrument),velocity:T.int(n.velocity),sustainTime:T.int(n.sustainTime??40),delayedPlayingTime:T.int(n.delayedPlayingTime??0),fadeInTime:T.int(n.fadeInTime??0),fadeOutTime:T.int(n.fadeOutTime??0),holdUntilRelease:T.byte(n.holdUntilRelease?1:0),oneShot:T.byte(n.oneShot===false?0:1),...(n.volumePoints?{AdvancedData:T.compound({VolumePoints:T.list(10,n.volumePoints.map(p=>({t:T.float(p.t),v:T.float(p.v)})))})}: {})};
  });
 }
 function write(file,m,{name='红石音乐',target='26.1.2'}={}){

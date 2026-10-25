@@ -40,7 +40,7 @@
    <button class="nav-item" id="showLog"><svg><use href="#i-file"/></svg>转换记录<span id="logCount">0</span></button>
   </nav>
   <div class="sidebar-note"><span class="tiny-symbol">♪</span><p>让每一段旋律<br>都有自己的形状。</p><div class="note-rule"></div><small>音乐 → 电路 → 世界</small></div>
-  <div class="sidebar-bottom"><div class="online"><span></span>本地运行 · 无需联网</div><div class="version">DESKTOP <b id="version">2.11.2</b></div><button id="aboutBtn" class="text-button">关于与设计致谢 ↗</button></div>
+  <div class="sidebar-bottom"><div class="online"><span></span>本地运行 · 无需联网</div><div class="version">DESKTOP <b id="version">2.11.6</b></div><button id="aboutBtn" class="text-button">关于与设计致谢 ↗</button></div>
  </aside>
  <header class="topbar" id="windowTitlebar" title="拖动窗口 · 双击最大化"><div class="title-drag" title="拖动窗口 · 双击最大化"><div class="breadcrumb">工作空间 <span>/</span> <strong>新建转换</strong></div></div><div class="top-actions"><button class="theme-toggle" id="themeBtn" aria-label="选择外观主题" aria-haspopup="menu" aria-expanded="false"><svg id="themeIcon"><use href="#i-glass"/></svg><span id="themeLabel">浮光</span></button></div></header>
  <main class="workspace">
@@ -51,7 +51,7 @@
     <div class="path-edit"><label for="inputPath">文件路径</label><input id="inputPath" type="text" placeholder="也可以在这里粘贴 NBS 或 MIDI 文件路径" spellcheck="false"></div>
     <div class="output-row"><label for="outputPath"><svg><use href="#i-folder"/></svg>输出到</label><input id="outputPath" type="text" spellcheck="false"><button class="icon-button" id="pickOutput" aria-label="更改输出目录" title="更改输出目录"><svg><use href="#i-chevron"/></svg></button></div>
    </section>
-   <details class="panel disclosure" id="midiSettings" hidden><summary><div><strong>MIDI 时长与节拍</strong><small>自动选择 10t / 20t · 读取 Note Off 和延音踏板</small></div><svg><use href="#i-chevron"/></svg></summary><div class="disclosure-body"><div class="field-grid" id="midiFields"></div><p class="help">MIDI 没有统一淡入淡出时值。毫秒值由你设置，按 50 ms 游戏刻导出，并限制在音符时长以内。持续时间与渐变仅用于 26.x ENB 模组版；纯原版只保留起音、音高和乐器。可提前编辑并保存这些数值；仅 ENB 模式会应用包络。配套 ENB 支持循环延音。</p></div></details>
+   <details class="panel disclosure" id="midiSettings" hidden><summary><div><strong>MIDI 时长与节拍</strong><small>自动选择 10t / 20t · 读取 Note Off 和延音踏板</small></div><svg><use href="#i-chevron"/></svg></summary><div class="disclosure-body"><div class="field-grid" id="midiFields"></div><p class="help">自适应包络优先参考 MIDI 控制器，每个音符独立生成；缺失部分按乐器推算；最终衰减尾音低于 0.11 后，在最多 250 ms 内平滑归零。保留起音淡入与后续渐强。沙子底座小鼓始终使用原版自然尾音，不应用包络。管乐与簧片音色的 CC2 按音量近似处理，不保证复原原音源。手动统一设置继续可用，毫秒值仅在“按设置淡入淡出”时生效。包络以 50 ms 游戏刻记录，仅用于 26.x ENB；原版不应用。</p></div></details>
    <section class="panel setup-panel" id="setup">
     <div class="section-head"><h2><span class="step">02</span> 转换方式</h2><span class="badge">选好音乐，就能开始</span></div>
     <div class="setup-switch" role="group" aria-label="转换方式"><button id="autoSetup" aria-pressed="true">自动配置 <small>按歌曲选择，适合直接使用</small></button><button id="manualSetup" aria-pressed="false">手动配置 <small>保留全部参数与配置槽</small></button></div>
@@ -99,7 +99,7 @@
 <div class="resize-handles" aria-hidden="true"><div data-edge="left"></div><div data-edge="right"></div><div data-edge="top"></div><div data-edge="bottom"></div><div data-edge="top-left"></div><div data-edge="top-right"></div><div data-edge="bottom-left"></div><div data-edge="bottom-right"></div></div>
 <div class="toast" id="toast" role="status" aria-live="polite"></div>
 <dialog id="renameDialog"><form method="dialog"><div class="dialog-head"><h2>给配置起个名字</h2><button class="icon-button" value="cancel" aria-label="关闭"><svg><use href="#i-close"/></svg></button></div><p>下次选择它，就能载入这一组设置。</p><label for="profileName">配置名称</label><input id="profileName" maxlength="24" required autocomplete="off"><div class="dialog-actions"><button class="button" value="cancel" formnovalidate>取消</button><button class="button primary" id="confirmRename" value="save">保存名称</button></div></form></dialog>
-<dialog id="aboutDialog"><div class="dialog-head"><h2>为旋律留一块空间。</h2><button class="icon-button" id="closeAbout" aria-label="关闭"><svg><use href="#i-close"/></svg></button></div><p id="aboutVersion">音符工坊 · Note Redstone Studio · 2.11.2</p><p>界面与动效参考 Emil Kowalski 的 Design Engineering。搜索动画基于 Paidax01 / Math Curve Loaders 的 Rose Four：r = a cos(4θ)。</p><p class="help">浅色「纸间」：中性灰白、压印与实体层叠。<br>深色「夜航」：黑灰面板、蓝色线条与仪表读数。<br>毛玻璃「浮光」：透光卡片、独立侧栏与悬浮操作条。<br>首次使用默认毛玻璃，之后记住上次主题。<br>在右上角可切换主题。动态效果跟随系统的减少动画偏好。</p><p class="help">原版音符盒不支持独立力度；ENB 模式会保存 NBS 音符力度 × 音轨音量，需要配套模组。输出目录内的说明包含各模式接线和使用要求。</p></dialog>
+<dialog id="aboutDialog"><div class="dialog-head"><h2>为旋律留一块空间。</h2><button class="icon-button" id="closeAbout" aria-label="关闭"><svg><use href="#i-close"/></svg></button></div><p id="aboutVersion">音符工坊 · Note Redstone Studio · 2.11.6</p><p>界面与动效参考 Emil Kowalski 的 Design Engineering。搜索动画基于 Paidax01 / Math Curve Loaders 的 Rose Four：r = a cos(4θ)。</p><p class="help">浅色「纸间」：中性灰白、压印与实体层叠。<br>深色「夜航」：黑灰面板、蓝色线条与仪表读数。<br>毛玻璃「浮光」：透光卡片、独立侧栏与悬浮操作条。<br>首次使用默认毛玻璃，之后记住上次主题。<br>在右上角可切换主题。动态效果跟随系统的减少动画偏好。</p><p class="help">原版音符盒不支持独立力度；ENB 模式会保存 NBS 音符力度 × 音轨音量，需要配套模组。输出目录内的说明包含各模式接线和使用要求。</p></dialog>
 <div id="boot" class="boot"><canvas id="bootRose" width="200" height="200"></canvas><strong>正在打开工作台</strong><small id="bootMessage">加载本地设置…</small></div>
 <script src="rose-four.js"></script><script src="studio.js"></script>
 </body></html>

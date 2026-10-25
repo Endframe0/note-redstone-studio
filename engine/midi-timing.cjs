@@ -9,20 +9,20 @@ function plan(raw,opt={}){
  // One speed multiplier for the entire tempo map. Tempo ratios cannot drift.
  for(const t of tempos){quantum=gcd(quantum,t.numerator);quantum=gcd(quantum,ppq*t.us)}
  function candidate(resolution,factor){
-  let maxErrorMs=0,sumError=0,boundaryErrorMs=0,alignedOnsets=0;const segments=[];
+  let maxErrorMs=0,sumError=0,sumSquaredError=0,boundaryErrorMs=0,alignedOnsets=0;const segments=[];
   for(let i=0;i<tempos.length;i++){
    const t=tempos[i],end=tempos[i+1]?.tick??raw.midi.lastTick;
    const outputStart=t.numerator/ppq/1e6*resolution/speed/factor,ticksPerBeat=t.us/1e6*resolution/speed/factor;
    const next=outputStart+(end-t.tick)/ppq*ticksPerBeat;
    if(i+1<tempos.length)boundaryErrorMs=Math.max(boundaryErrorMs,Math.abs(next-Math.round(next))/resolution*1000);
    const seg={tick:t.tick,endTick:end,outputStart,ticksPerBeat,originalBpm:60e6/t.us,actualBpm:60*resolution/ticksPerBeat,speedFactor:speed*factor,adjustmentPercent:(factor-1)*100};
-   for(const tick of grouped[i]){const x=outputStart+(tick-t.tick)/ppq*ticksPerBeat,error=Math.abs(x-Math.round(x))/resolution*1000;maxErrorMs=Math.max(maxErrorMs,error);sumError+=error;if(error<1e-5)alignedOnsets++}
+   for(const tick of grouped[i]){const x=outputStart+(tick-t.tick)/ppq*ticksPerBeat,error=Math.abs(x-Math.round(x))/resolution*1000;maxErrorMs=Math.max(maxErrorMs,error);sumError+=error;sumSquaredError+=error*error;if(error<1e-5)alignedOnsets++}
    segments.push(seg);
   }
-  const timing={resolution,ppq,mode,tolerancePercent:tolerance,globalSpeedFactor:speed*factor,tempoRatiosPreserved:true,segments,maxOnsetErrorMs:maxErrorMs,meanOnsetErrorMs:sumError/Math.max(1,raw.notes.length),boundaryErrorMs,maxSpeedChangePercent:Math.abs(factor-1)*100,alignedOnsets};
-  let previousSource=-1,previousTarget=-1,merged=0;
-  for(const n of raw.notes){if(n.midiTick===previousSource)continue;const tick=mapTick(n.midiTick,timing);if(tick===previousTarget)merged++;previousTarget=tick;previousSource=n.midiTick}
-  timing.mergedOnsets=merged;timing.exact=maxErrorMs<1e-5&&boundaryErrorMs<1e-5;return timing;
+  const timing={resolution,ppq,mode,tolerancePercent:tolerance,globalSpeedFactor:speed*factor,tempoRatiosPreserved:true,segments,maxOnsetErrorMs:maxErrorMs,meanOnsetErrorMs:sumError/Math.max(1,raw.notes.length),rootMeanSquareOnsetErrorMs:Math.sqrt(sumSquaredError/Math.max(1,raw.notes.length)),boundaryErrorMs,maxSpeedChangePercent:Math.abs(factor-1)*100,alignedOnsets,totalNotes:raw.notes.length,quantizedNotes:raw.notes.length-alignedOnsets};
+  let previousSource=-1,previousTarget=-1,merged=0,distinct=0,quantized=0;
+  for(const n of raw.notes){if(n.midiTick===previousSource)continue;const exact=mapExact(n.midiTick,timing),tick=Math.round(exact);distinct++;if(Math.abs(exact-tick)/resolution*1000>=1e-5)quantized++;if(tick===previousTarget)merged++;previousTarget=tick;previousSource=n.midiTick}
+  timing.distinctSourceOnsets=distinct;timing.quantizedOnsets=quantized;timing.mergedOnsets=merged;timing.exact=maxErrorMs<1e-5&&boundaryErrorMs<1e-5;return timing;
  }
  const candidates=[];
  for(const resolution of (opt.midiAutoResolution===false?[Number(opt.timeResolution??20)]:[10,20])){
@@ -39,12 +39,19 @@ function plan(raw,opt={}){
   }
   for(const factor of factors)candidates.push(candidate(resolution,factor));
  }
- candidates.sort((a,b)=>Number(b.exact)-Number(a.exact)||a.mergedOnsets-b.mergedOnsets||(a.exact?a.maxSpeedChangePercent-b.maxSpeedChangePercent:a.maxOnsetErrorMs-b.maxOnsetErrorMs||b.alignedOnsets-a.alignedOnsets||a.meanOnsetErrorMs-b.meanOnsetErrorMs)||a.maxSpeedChangePercent-b.maxSpeedChangePercent||a.resolution-b.resolution);
+ // Whole-song timing error wins over a single near-coincident onset merge.
+ // RMS penalizes large outliers without letting one irregular note dictate the
+ // tempo of thousands of otherwise precisely aligned notes. Keep merge counts
+ // visible and use them to break ties; no onset is silently dropped here.
+ const compare=(a,b)=>Math.abs(a-b)<1e-6?0:a-b;
+ candidates.sort((a,b)=>Number(b.exact)-Number(a.exact)||(a.exact?
+  compare(a.maxSpeedChangePercent,b.maxSpeedChangePercent):
+  compare(a.rootMeanSquareOnsetErrorMs,b.rootMeanSquareOnsetErrorMs)||compare(a.maxOnsetErrorMs,b.maxOnsetErrorMs)||compare(a.boundaryErrorMs,b.boundaryErrorMs)||a.mergedOnsets-b.mergedOnsets||compare(a.meanOnsetErrorMs,b.meanOnsetErrorMs)||b.alignedOnsets-a.alignedOnsets)||compare(a.maxSpeedChangePercent,b.maxSpeedChangePercent)||a.resolution-b.resolution);
  const chosen=candidates[0];
  if(mode==='strict'&&!chosen.exact)throw Error('MIDI 原速无法严格对齐 10t / 20t；请选择节拍适配或允许量化。');
  return chosen;
 }
 function mapExact(tick,p){let lo=0,hi=p.segments.length;while(lo+1<hi){const m=(lo+hi)>>1;if(p.segments[m].tick<=tick)lo=m;else hi=m}const s=p.segments[lo];return s.outputStart+(tick-s.tick)/p.ppq*s.ticksPerBeat}
 function mapTick(tick,p){return Math.round(mapExact(tick,p))}
-function messages(p){return [`MIDI 自动选择 ${p.resolution}t；${p.segments.length} 个速度段，保持各段 BPM 比例；整体速度调整 ${p.maxSpeedChangePercent.toFixed(3)}%。`,...p.segments.slice(0,8).map(s=>`BPM ${s.originalBpm.toFixed(3)} → ${s.actualBpm.toFixed(3)}（${s.adjustmentPercent>=0?'+':''}${s.adjustmentPercent.toFixed(3)}%）。`),p.exact?'起音和速度段边界全部落在整刻上，节拍无累积错位。':`仍有无法整刻对齐的拍点：起音最大量化偏差 ${p.maxOnsetErrorMs.toFixed(3)} ms，${p.mergedOnsets} 个不同起音合并；没有逐间隔累加取整。`]}
+function messages(p){return [`MIDI 自动选择 ${p.resolution}t；${p.segments.length} 个速度段，保持各段 BPM 比例；整体速度调整 ${p.maxSpeedChangePercent.toFixed(3)}%。`,...p.segments.slice(0,8).map(s=>`BPM ${s.originalBpm.toFixed(3)} → ${s.actualBpm.toFixed(3)}（${s.adjustmentPercent>=0?'+':''}${s.adjustmentPercent.toFixed(3)}%）。`),p.exact?'起音和速度段边界全部落在整刻上，节拍无累积错位。':`${p.alignedOnsets} / ${p.totalNotes??'?'} 个音符起音精确对齐，剩余 ${p.quantizedNotes??'?'} 个需量化；平均偏差 ${p.meanOnsetErrorMs.toFixed(3)} ms，最大 ${p.maxOnsetErrorMs.toFixed(3)} ms，${p.mergedOnsets} 个不同起音合并。${p.boundaryErrorMs>=1e-5?`速度段边界偏差 ${p.boundaryErrorMs.toFixed(3)} ms。`:''}没有逐间隔累加取整。`]}
 module.exports={plan,mapTick,mapExact,messages};

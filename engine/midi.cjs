@@ -52,28 +52,36 @@ function parse(file,{maxNotes=1000000}={}){
  }
  const seconds=t=>{let lo=0,hi=tempo.length;while(lo+1<hi){const m=(lo+hi)>>1;if(tempo[m].tick<=t)lo=m;else hi=m}const s=tempo[lo];return (s.numerator+(t-s.tick)*s.us)/ppq/1e6};
  if(seconds(lastTick)>3600)throw Error('MIDI 超过 60 分钟。');
- const channels=Array.from({length:16},()=>({program:0,volume:100,expression:127,pedal:false,active:new Map(),held:[]}));
+ const controlLanes=Array.from({length:16},()=>[]);
+ const channels=Array.from({length:16},()=>({program:0,volume:100,expression:127,cc:{},pedal:false,active:new Map(),held:[]}));
  const notes=[],layers=Array.from({length:tracks*16},()=>({volume:100,panning:100}));let orphan=0,unterminated=0,unmapped=0,bends=0,ignoredCC=new Set();
  const finish=(n,t)=>{n.midiEndTick=Math.max(n.midiTick,t);n.durationSeconds=seconds(n.midiEndTick)-seconds(n.midiTick)};
- const release=(ch,key,t)=>{const q=ch.active.get(key);if(!q?.length){orphan++;return}const n=q.shift();if(!q.length)ch.active.delete(key);if(ch.pedal)ch.held.push(n);else finish(n,t)};
+ const release=(ch,key,t,velocity=64)=>{const q=ch.active.get(key);if(!q?.length){orphan++;return}const n=q.shift();n.midiKeyOffTick=t;n.midiReleaseVelocity=velocity;if(!q.length)ch.active.delete(key);if(ch.pedal)ch.held.push(n);else finish(n,t)};
+ let eventIndex=0;
  for(const e of events){
+  e.sequence=eventIndex++;
   if(typeof e.type!=='number')continue;const ch=channels[e.ch];
   if(e.type===12){ch.program=e.a;continue}
   if(e.type===14){if(e.a+128*e.c!==8192)bends++;continue}
   if(e.type===11){
+   if([2,7,11,72,73,75,121].includes(e.a)){
+    controlLanes[e.ch].push({tick:e.tick,order:e.sequence,cc:e.a,value:e.c});
+    if(e.a===121)ch.cc={7:ch.volume,11:127};else ch.cc[e.a]=e.c;
+   }
    if(e.a===7)ch.volume=e.c;else if(e.a===11)ch.expression=e.c;
    else if(e.a===64){const down=e.c>=64;if(ch.pedal&&!down){for(const n of ch.held)finish(n,e.tick);ch.held=[]}ch.pedal=down}
    else if(e.a===120||e.a===123){for(const key of [...ch.active.keys()])while(ch.active.has(key))release(ch,key,e.tick);if(e.a===120){for(const n of ch.held)finish(n,e.tick);ch.held=[]}}
    else if(e.a===121){ch.expression=127;ch.pedal=false;for(const n of ch.held)finish(n,e.tick);ch.held=[]}
-   else ignoredCC.add(e.a);continue;
+   else if(![2,72,73,75].includes(e.a))ignoredCC.add(e.a);continue;
   }
-  if(e.type===8||(e.type===9&&!e.c)){release(ch,e.a,e.tick);continue}
+  if(e.type===8||(e.type===9&&!e.c)){release(ch,e.a,e.tick,e.type===8?e.c:64);continue}
   if(e.type!==9)continue;
   const drum=e.ch===9,d=drum?mapping.drums[e.a-mapping.drumStart]:null,m=mapping.programs[ch.program];
   if(drum&&!d)unmapped++;
   const instrument=drum?(d?.instrument??3):m.instrument;
   const key=drum?(d?.key??45):e.a-21+m.octave*12;
   const v=Math.round(e.c*ch.volume/127*ch.expression/127),n={tick:seconds(e.tick)*1e6,midiTick:e.tick,midiKey:e.a,midiProgram:ch.program,midiChannel:e.ch,midiDrum:drum,layer:e.track*16+e.ch,instrument,key,pitch:0,velocity:v/127*100,midiVelocity:v,panning:100};
+  Object.assign(n,{midiRawVelocity:e.c,midiOrder:e.sequence,midiCC:{...ch.cc}});
   notes.push(n);if(notes.length>maxNotes)throw Error(`本模式最多转换 ${maxNotes} 个音符。`);
   const q=ch.active.get(e.a)||[];q.push(n);ch.active.set(e.a,q);
  }
@@ -84,8 +92,8 @@ function parse(file,{maxNotes=1000000}={}){
  if(unmapped)compatibilityWarnings.push(`${unmapped} 个非映射打击乐音符使用小鼓默认音高近似。`);
  if(bends)compatibilityWarnings.push(`含 ${bends} 个非居中弯音事件；当前保留键盘音高，不还原弯音曲线。`);
  if(ignoredCC.size||hasSysEx)compatibilityWarnings.push('不还原 SysEx、音色库、声像、效果器及未支持控制器；声像随游戏听者位置。');
- compatibilityWarnings.push('CC7/11 音量与表情按起音瞬间取值，不还原音符播放过程中的控制器包络。');
+ compatibilityWarnings.push('手动统一包络只使用起音瞬间的 CC7/11；自适应包络可读取演奏中的控制器变化。');
  compatibilityWarnings.push('MIDI 乐器按 Open Note Block Studio 映射到音符盒音色与八度；不等同于原 MIDI 音源。');
- return {sourceType:'midi',version:format,tempo:1e6,instrumentCount:20,name:trackNames.find(Boolean)||'MIDI',layers,notes,compatibilityWarnings,midi:{format,ppq,tempo,lastTick,durationSeconds:seconds(lastTick),trackNames,mappingSource:mapping.source}};
+ return {sourceType:'midi',version:format,tempo:1e6,instrumentCount:20,name:trackNames.find(Boolean)||'MIDI',layers,notes,compatibilityWarnings,midi:{format,ppq,tempo,lastTick,durationSeconds:seconds(lastTick),trackNames,controlLanes,mappingSource:mapping.source}};
 }
 module.exports={parse};

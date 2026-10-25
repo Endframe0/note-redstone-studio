@@ -5,7 +5,7 @@ const icon=id=>`<svg aria-hidden="true"><use href="#i-${id}"/></svg>`;
 const modes=['体积优先','极限省材（强制乐句复用）','毒曲（宽高 ≤100，自动跟随）'];
 const fields={
  automatic:[["auto_sound","制作版本 · 由你选择"],["auto_pitch","超出音域时怎么办"]],
- midi:[['midi_timing','节奏处理'],['midi_speed_tolerance','允许速度调整（±%）'],['midi_envelope','音量包络'],['midi_fade_in','淡入（毫秒）'],['midi_fade_out','淡出（毫秒）']],
+ midi:[['midi_timing','节奏处理'],['midi_speed_tolerance','允许速度调整（±%）'],['midi_envelope','音量包络'],['midi_fade_in','手动淡入（毫秒）'],['midi_fade_out','手动淡出（毫秒）']],
  primary:[['target','Java 版本'],['sound_engine','音域方案'],['support','结构支撑','不改变乐器底座'],['speed','播放速度']],
  shape:[['aspect','地面长宽差距','短边 40 格、允许长 50%，则长边最多 60 格。'],['spatial_aspect','整体长宽高比例','倍数越小，整体越接近方块。'],['listening_radius','中心听音半径','中心到最远角落的距离，不保证音量一致。']],
  music:[['timing','音乐时序'],['pitch','音高处理'],['transpose','移调','半音 · −48 至 48'],['max_tracks','并行线路上限']],
@@ -31,11 +31,13 @@ let analysisTimer,analysisVersion=0,analysisBusy=false,analysisResult=null;
 function renderAnalysis(){
  $("#analysisRose").hidden=!analysisBusy;if(analysisBusy)analysisRose.start();else analysisRose.stop();
  const r=analysisResult,s=r?.summary;
+ const singleTempo=s?.sourceType==='midi'&&s.midi?.segments?.length===1?s.midi.segments[0]:null;
+ const tempoText=singleTempo?`${Number(singleTempo.originalBpm.toFixed(3))}${Math.abs(singleTempo.actualBpm-singleTempo.originalBpm)>.0005?' → '+Number(singleTempo.actualBpm.toFixed(3)):''} BPM`:s?`${Number(s.tempo.toFixed(3))} ${s.sourceType==='midi'?'BPM':'tick/s'}`:'';
  $('#analysisTitle').textContent=analysisBusy?'正在识别这首音乐…':s?'已识别 · '+(s.objective==='toxic'?'密集音符布局':'紧凑红石布局'):r?.error?'需要调整后再转换':'等待选择音乐文件';
  $('#songAnalysis').classList.toggle('analysis-error',!!r?.error&&!analysisBusy);
- $('#analysisFacts').textContent=analysisBusy?'读取真实速度、音域和同时发声音符数，不进行布局搜索。':s?`${Number(s.tempo.toFixed(3))} ${s.sourceType==='midi'?'BPM':'tick/s'} · ${number(s.notes)} 个音符 · 最多 ${s.peak} 音同时发声 · 约 ${Math.ceil(s.durationSeconds)} 秒`:r?.error||'自动识别速度、音域和密度，不修改源文件。';
+ $('#analysisFacts').textContent=analysisBusy?'读取真实速度、音域和同时发声音符数，不进行布局搜索。':s?`${tempoText} · ${number(s.notes)} 个音符 · 最多 ${s.peak} 音同时发声 · 约 ${Math.ceil(s.durationSeconds)} 秒`:r?.error||'自动识别速度、音域和密度，不修改源文件。';
  $('#analysisDecisions').replaceChildren();
- if(s&&!analysisBusy&&values.adaptive!==false)$('#footerSub').textContent=(s.soundEngine==='extended'?'需要 ENB 模组 · ':'原版音符盒 · ')+s.timeResolution+'t · '+(s.sourceType==='midi'?(s.midi.exact?'节拍整刻对齐':'有量化误差，见分析说明'):'原速播放');
+ if(s&&!analysisBusy&&values.adaptive!==false)$('#footerSub').textContent=(s.soundEngine==='extended'?'需要 ENB 模组 · ':'原版音符盒 · ')+s.timeResolution+'t · '+(s.sourceType==='midi'?(s.midi.exact?'节拍整刻对齐':s.midi.quantizedNotes>0?`${s.midi.quantizedNotes} 个音符需量化`:'有量化误差，见分析说明'):'原速播放');
  if(s&&!analysisBusy)for(const message of s.messages){const li=document.createElement('li');li.textContent=message;$('#analysisDecisions').append(li);}
 }
 function scheduleAnalysis(){

@@ -1,5 +1,9 @@
 'use strict';
-function envelope(n,startRedstoneTick,plan,opt){
+function envelope(n,startRedstoneTick,plan,opt,source){
+ // Sand-base snare uses its original one-shot sample, including in manual mode.
+ // Keep onset velocity/CC gain from the parser; never synthesize a held drum.
+ if(n.instrument===3)return {enbNaturalPercussion:true};
+ if(opt.midiEnvelope==='adaptive')return require('./midi-adaptive-envelope.cjs').adaptive(n,startRedstoneTick,plan,source);
  const endGameTick=Math.round(require('./midi-timing.cjs').mapExact(n.midiEndTick,plan)*20/plan.resolution);
  const sustain=Math.max(1,endGameTick-startRedstoneTick*2),mode=opt.midiEnvelope||'custom';
  const ms=[Number(opt.midiFadeInMs??0),Number(opt.midiFadeOutMs??50)];

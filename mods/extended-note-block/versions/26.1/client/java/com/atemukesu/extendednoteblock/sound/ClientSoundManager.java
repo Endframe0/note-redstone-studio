@@ -10,6 +10,7 @@ import java.util.UUID;
 import java.util.concurrent.ConcurrentHashMap;
 /** GM sample playback plus precisely pitched vanilla instruments for NBS conversion. */
 public class ClientSoundManager {
+    private static final java.util.concurrent.atomic.AtomicInteger playbackTraceCount = new java.util.concurrent.atomic.AtomicInteger();
     private static final Map<UUID, StoppablePositionalSoundInstance> PLAYING_SOUNDS = new ConcurrentHashMap<>();
     private static final float MIN_ALIVE_VOLUME = 0.0001f;
     public static final String[] VANILLA_INSTRUMENTS = {
@@ -44,6 +45,11 @@ public class ClientSoundManager {
         StoppablePositionalSoundInstance instance = new StoppablePositionalSoundInstance(
                 SoundEvent.createVariableRangeEvent(sample.id), SoundSource.RECORDS,
                 Math.max(initialVolume, MIN_ALIVE_VOLUME), sample.pitch, pos, !sample.oneShot);
+        if (playbackTraceCount.getAndIncrement() < 16) {
+            org.slf4j.LoggerFactory.getLogger("extendednoteblock.playback").info(
+                    "Client pos={} packetInstrument={} note={} oneShot={} looping={} event={}",
+                    pos, instrumentId, note, sample.oneShot, instance.isLooping(), sample.id);
+        }
         if (!sample.oneShot) PLAYING_SOUNDS.put(soundId, instance);
         Minecraft.getInstance().getSoundManager().play(instance);
     }

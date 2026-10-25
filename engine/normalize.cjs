@@ -11,7 +11,7 @@ function normalize(source,opt={}){
  if(extended)warnings.push('需要配套的 Extended Note Block 对应版本组合（旧版为官方 ENB＋NBS 兼容补丁，高版本为配套移植版），粘贴须保留方块实体 NBT；保留原版相对音色，MIDI 音高为 NBS key + 21。');
  const midiPlan=source.sourceType==='midi'?(opt.midiPlan||require('./midi-timing.cjs').plan(source,opt)):null;
  let timingErrorMs=0,pitchChanged=0,muted=0;const notes=[];
- for(const n of source.notes){const layer=source.layers[n.layer];if(n.velocity===0||layer?.volume===0){muted++;continue}
+ for(const n of source.notes){const layer=source.layers[n.layer];if((n.velocity===0&&!(extended&&opt.midiEnvelope==='adaptive'&&n.instrument!==3&&n.midiRawVelocity>0))||layer?.volume===0){muted++;continue}
   if(n.instrument>=source.instrumentCount||n.instrument>=names.length)throw Error(`第 ${n.tick} tick 使用自定义乐器 ${n.instrument}，纯红石不能还原。请先在 NBS 中换成原版乐器。`);
   if(n.instrument>=16&&!require('./versions.cjs').supports(opt.target,'trumpets'))throw Error('铜管乐器需要 Minecraft 26.1 或更新版本；不会静默换成其他音色。');
   let key=n.key+n.pitch/100+transpose;const before=key;
@@ -21,7 +21,7 @@ function normalize(source,opt={}){
   const resolution=Number(opt.timeResolution??10);if(![10,20].includes(resolution))throw Error('时序精度必须为 10 或 20');
   const exact=midiPlan?require('./midi-timing.cjs').mapExact(n.midiTick,midiPlan)*10/midiPlan.resolution:n.tick/source.tempo*10/speed,tick=Math.round(exact*(resolution/10))/(resolution/10),error=Math.abs(tick-exact)*100;
   if(error>0.00001&&!midiPlan&&opt.timing!=='quantize')throw Error(resolution===20?'此曲时序不能精确落在 0.05 秒游戏刻上，请选择最近游戏刻或调整速度。':'此曲时序不能精确落在 0.1 秒红石刻上。请选择“最近红石刻（±50 ms）”或调整 NBS 速度。');
-  timingErrorMs=Math.max(timingErrorMs,error);notes.push({...n,tick,key,pitch:0,sourceTick:n.tick,...(extended?{layerVolume:layer?.volume??100,enbVelocity:n.midiVelocity??require('./note-volume.cjs').toEnbVelocity(n.velocity??100,layer?.volume??100),...(midiPlan?require('./midi-envelope.cjs').envelope(n,tick,midiPlan,opt):{})}:{})});
+  timingErrorMs=Math.max(timingErrorMs,error);notes.push({...n,tick,key,pitch:0,sourceTick:n.tick,...(extended?{layerVolume:layer?.volume??100,enbVelocity:n.midiVelocity??require('./note-volume.cjs').toEnbVelocity(n.velocity??100,layer?.volume??100),...(midiPlan?require('./midi-envelope.cjs').envelope(n,tick,midiPlan,opt,source):{})}:{})});
  }
  notes.sort((a,b)=>a.tick-b.tick||a.layer-b.layer);
  if(!notes.length)throw Error('文件没有可发声的音符。');
@@ -35,9 +35,10 @@ function normalize(source,opt={}){
  if(pitchChanged)warnings.push(`已按选项折叠 / 取整 ${pitchChanged} 个音高。`);
  if(muted)warnings.push(`省略 ${muted} 个音量为 0 的静音音符。`);
  if(speed!==1)warnings.push(`演奏速度为原曲 ${speed} 倍。`);
- if(midiPlan)warnings.push(...require('./midi-timing.cjs').messages(midiPlan),extended?'MIDI 持续时间由 Note Off / 延音踏板确定，淡入淡出为导入设置（不是 MIDI 自带时值字段）。26.x ENB port.2 支持采样循环延音和包络；请更新客户端与服务端模组。短采样延长后的音色可能不同于真实乐器长音。':'MIDI 使用原版音符盒时仅还原乐器、音高与起音；不保留 Note Off 时长、延音踏板时长、淡入淡出或独立力度，声音按原版采样自然播放。');
+ if(midiPlan)warnings.push(...require('./midi-timing.cjs').messages(midiPlan),extended&&opt.midiEnvelope==='adaptive'?'MIDI 自适应包络：逐音符读取 CC7/11，风管/簧片音色近似读取 CC2；CC72/73/75 相对调整乐器包络。缺失部分按 GM 乐器推算；最终衰减尾音低于 0.11 后，最多 250 ms 内平滑归零并结束播放，保留淡入和后续渐强；不是原 MIDI 音源的精确复原。':extended?'MIDI 持续时间由 Note Off / 延音踏板确定，淡入淡出为导入设置（不是 MIDI 自带时值字段）。26.x ENB port.2 支持采样循环延音和包络；请更新客户端与服务端模组。短采样延长后的音色可能不同于真实乐器长音。':'MIDI 使用原版音符盒时仅还原乐器、音高与起音；不保留 Note Off 时长、延音踏板时长、淡入淡出或独立力度，声音按原版采样自然播放。');
+ if(midiPlan&&extended&&notes.some(n=>n.enbNaturalPercussion))warnings.push('沙子底座小鼓使用原版自然尾音：不使用 MIDI 持续时间、淡入淡出或自适应曲线；保留起音时音高与力度。');
  const ticks=[...gm.keys()];let prev=0;if(ticks[0]>0)gm.set(0,[]);
  for(const t of ticks){while(t-prev>8){prev+=8;gm.set(prev,[])}prev=t}
- return{...source,midiConversion:midiPlan?{...midiPlan,envelope:{preserved:extended,mode:opt.midiEnvelope||'custom',fadeInMs:Number(opt.midiFadeInMs??0),fadeOutMs:Number(opt.midiFadeOutMs??50)},mappingSource:source.midi.mappingSource,mappingProfile:source.midi.mappingProfile,copperMappedNotes:source.midi.copperMappedNotes,sourceDurationSeconds:source.midi.durationSeconds,durationSeconds:notes.reduce((m,n)=>Math.max(m,(n.tick*2+(n.enbSustainTime??0))/20),0)}:null,tempo:10,notes,events:[...gm].sort((a,b)=>a[0]-b[0]).map(([tick,notes])=>({tick,notes})),warnings,timingErrorMs,pitchChanged,muted,merged,speed,transpose,denseChordCount:denseChords.length};
+ return{...source,midiConversion:midiPlan?{...midiPlan,envelope:{preserved:extended,mode:opt.midiEnvelope||'custom',fadeInMs:Number(opt.midiFadeInMs??0),fadeOutMs:Number(opt.midiFadeOutMs??50),independentCurves:notes.filter(n=>n.enbVolumePoints).length,naturalSnareNotes:notes.filter(n=>n.enbNaturalPercussion).length,breathMappedNotes:notes.filter(n=>n.midiEnvelopeInfo?.breathApplied).length,releaseFromCC72:notes.filter(n=>n.midiEnvelopeInfo?.releaseSource==='CC72-relative-to-instrument').length,estimatedReleaseNotes:notes.filter(n=>n.midiEnvelopeInfo?.releaseSource==='instrument-estimate').length,releaseAfterNoteOff:notes.some(n=>n.midiEnvelopeInfo&&n.enbSustainTime>n.midiEnvelopeInfo.gateTicks),quietTailThreshold:opt.midiEnvelope==='adaptive'?.11:null,quietTailFadeTicks:opt.midiEnvelope==='adaptive'?5:null,quietTailNotes:notes.filter(n=>n.midiEnvelopeInfo?.quietTail).length,quietTailEndsBeforeNoteOff:notes.filter(n=>n.midiEnvelopeInfo?.quietTail&&n.enbSustainTime<=n.midiEnvelopeInfo.gateTicks).length},mappingSource:source.midi.mappingSource,mappingProfile:source.midi.mappingProfile,copperMappedNotes:source.midi.copperMappedNotes,sourceDurationSeconds:source.midi.durationSeconds,durationSeconds:notes.reduce((m,n)=>Math.max(m,(n.tick*2+(n.enbSustainTime??0))/20),0)}:null,tempo:10,notes,events:[...gm].sort((a,b)=>a[0]-b[0]).map(([tick,notes])=>({tick,notes})),warnings,timingErrorMs,pitchChanged,muted,merged,speed,transpose,denseChordCount:denseChords.length};
 }
 module.exports={normalize,names,bases};

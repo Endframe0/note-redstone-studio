@@ -44,6 +44,7 @@ public class ExtendedNoteBlockScreen extends AbstractContainerScreen<ExtendedNot
     private int fadeOutTime;
     private EditBox velocityField;
     private EditBox sustainField;
+    private final boolean naturalPlayback;
     private EditBox delayField;
     private EditBox fadeInField;
     private EditBox fadeOutField;
@@ -105,6 +106,7 @@ public class ExtendedNoteBlockScreen extends AbstractContainerScreen<ExtendedNot
         this.note = handler.getNote();
         this.velocity = handler.getVelocity();
         this.sustain = handler.getSustain();
+        this.naturalPlayback = handler.blockEntity.isOneShot();
         this.instrumentId = handler.getInstrumentId();
         this.delayedPlayingTime = handler.getDelayedPlayingTime();
         this.fadeInTime = handler.getFadeInTime();
@@ -160,8 +162,9 @@ public class ExtendedNoteBlockScreen extends AbstractContainerScreen<ExtendedNot
         // 创建并添加延音输入框
         this.sustainField = new EditBox(this.font, sustainX, currentY, thirdWidth, 20,
                 Component.translatable("gui.extendednoteblock.sustain_ticks"));
-        this.sustainField.setMaxLength(3);
-        this.sustainField.setValue(String.valueOf(this.sustain));
+        this.sustainField.setMaxLength(naturalPlayback ? 32 : 3);
+        this.sustainField.setValue(naturalPlayback ? Component.translatable("gui.extendednoteblock.natural").getString() : String.valueOf(this.sustain));
+        this.sustainField.setEditable(!naturalPlayback);
         this.sustainField.setResponder(text -> {
             this.sustain = parseInteger(text, 0, 400, this.sustain);
         });
@@ -186,6 +189,7 @@ public class ExtendedNoteBlockScreen extends AbstractContainerScreen<ExtendedNot
         this.fadeInField.setResponder(text -> {
             this.fadeInTime = parseInteger(text, 0, 400, this.fadeInTime);
         });
+        this.fadeInField.setEditable(!naturalPlayback);
         this.addRenderableWidget(this.fadeInField);
         this.fadeOutField = new EditBox(this.font, fadeOutX, currentY, halfWidth, 20,
                 Component.translatable("gui.extendednoteblock.fadeout_time"));
@@ -194,6 +198,7 @@ public class ExtendedNoteBlockScreen extends AbstractContainerScreen<ExtendedNot
         this.fadeOutField.setResponder(text -> {
             this.fadeOutTime = parseInteger(text, 0, 400, this.fadeOutTime);
         });
+        this.fadeOutField.setEditable(!naturalPlayback);
         this.addRenderableWidget(this.fadeOutField);
 
         int advBtnWidth = 80;
@@ -652,7 +657,7 @@ public class ExtendedNoteBlockScreen extends AbstractContainerScreen<ExtendedNot
         Component sustainLabel = Component.translatable("gui.extendednoteblock.sustain_ticks");
         context.text(font, sustainLabel, this.sustainField.getX(), this.sustainField.getY() - 10,
                 0xFFA0A0A0, true);
-        context.text(font, Component.translatable("gui.extendednoteblock.sustain.info"),
+        context.text(font, Component.translatable(naturalPlayback ? "gui.extendednoteblock.natural.info" : "gui.extendednoteblock.sustain.info"),
                 this.sustainField.getX() + 4, this.sustainField.getY() + this.sustainField.getHeight() + 4,
                 0xFF808080, true);
 

@@ -35,6 +35,12 @@ python tests/versions-readback.py
 node tests/versions-enb.cjs
 node tests/midi.cjs
 python tests/midi-readback.py
+node tests/midi-adaptive.cjs
+python tests/midi-adaptive-readback.py
+node tests/midi-quiet-tail.cjs
+node tests/midi-timing-fit.cjs
+node tests/midi-snare-natural.cjs
+node tests/nbs-natural.cjs
 ```
 
 这些检查覆盖序列化、目标版本、时序与 ENB 字段；不代替 Minecraft 实机试听。
@@ -46,7 +52,7 @@ python tests/midi-readback.py
 使用 JDK 25，在该目录运行，例如：
 
 ```powershell
-.\gradlew.bat '-PmcVersion=26.3' '-Pmod_version=1.9.1+mc26.3-port.3' build
+.\gradlew.bat '-PmcVersion=26.3' '-Pmod_version=1.9.1+mc26.3-port.4' build
 ```
 
 将两个参数中的版本一起换为 26.1、26.1.1、26.1.2、26.2 或 26.3。配套主项目源码中的构建适配用于这些版本；旧的上游版本目录作为来源保留，不是推荐构建入口。

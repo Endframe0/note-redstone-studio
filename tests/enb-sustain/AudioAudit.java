@@ -38,6 +38,7 @@ public class AudioAudit implements PreLaunchEntrypoint {
             check(context!=0 && ALC10.alcMakeContextCurrent(context),"loopback context");
             AL.createCapabilities(ALC.createCapabilities(device));
             check(AL.getCapabilities().AL_SOFT_loop_points,"sample loop extension");
+            OneShotAudit.run(device);
             for (String path : Files.readAllLines(Path.of(System.getProperty("enb.qa.samples")))) {
                 String[] row=path.split("\\|",2); String name=row[0];
                 try(var stream=new JOrbisAudioStream(Files.newInputStream(Path.of(row[1])))) {
